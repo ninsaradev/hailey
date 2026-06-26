@@ -7,651 +7,161 @@
     <title>Hailey - Accessibility Assistant</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
-        *, *::before, *::after {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+        *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+        :root{--yp:#F5C518;--yl:#FFE066;--yd:#C9A000;--bk:#1A1A1A;--wh:#FFFFFF;--gd:#2D2D2D;--dn:#FF3B30;--sc:#34C759;--st:env(safe-area-inset-top,20px);--sb:env(safe-area-inset-bottom,20px)}
+        html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:var(--bk);color:var(--wh);touch-action:manipulation}
 
-        :root {
-            --yellow-primary: #F5C518;
-            --yellow-light: #FFE066;
-            --yellow-dark: #C9A000;
-            --black: #1A1A1A;
-            --black-deep: #0D0D0D;
-            --white: #FFFFFF;
-            --gray-dark: #2D2D2D;
-            --danger: #FF3B30;
-            --success: #34C759;
-            --safe-top: env(safe-area-inset-top, 20px);
-            --safe-bottom: env(safe-area-inset-bottom, 20px);
-        }
+        @keyframes fadeInDown{from{opacity:0;transform:translateY(-30px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes fadeInUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+        @keyframes progressFill{from{width:0%}to{width:100%}}
+        @keyframes scanLine{0%,100%{top:0}50%{top:calc(100% - 3px)}}
+        @keyframes shake{0%,100%{transform:translateX(0)}10%,30%,50%,70%,90%{transform:translateX(-5px)}20%,40%,60%,80%{transform:translateX(5px)}}
+        @keyframes markerPulse{0%{box-shadow:0 0 0 0 rgba(245,197,24,.5)}70%{box-shadow:0 0 0 18px rgba(245,197,24,0)}100%{box-shadow:0 0 0 0 rgba(245,197,24,0)}}
+        @keyframes spin{to{transform:rotate(360deg)}}
 
-        html, body {
-            height: 100%;
-            overflow: hidden;
-            font-family: 'Inter', sans-serif;
-            background: var(--black);
-            color: var(--white);
-            touch-action: manipulation;
-        }
+        /* HOME */
+        #homeScreen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:20px;padding-top:var(--st);padding-bottom:var(--sb);background:linear-gradient(180deg,#1A1A1A,#0D0D0D)}
+        .home-logo-container{display:flex;flex-direction:column;align-items:center;margin-bottom:50px;animation:fadeInDown .8s ease-out}
+        .hailey-icon{width:100px;height:100px;background:var(--yp);border-radius:28px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;box-shadow:0 0 40px rgba(245,197,24,.3),0 8px 32px rgba(0,0,0,.4);position:relative}
+        .hailey-icon .material-icons{font-size:52px;color:var(--bk)}
+        .hailey-icon::after{content:'';position:absolute;inset:-4px;border-radius:32px;border:3px solid rgba(245,197,24,.3);animation:pulse 3s ease-in-out infinite}
+        .home-title{font-size:48px;font-weight:900;color:var(--yp);letter-spacing:4px;text-transform:uppercase;text-shadow:0 0 30px rgba(245,197,24,.3)}
+        .home-subtitle{font-size:16px;color:#888;margin-top:8px;letter-spacing:1px}
+        .home-buttons{display:flex;flex-direction:column;gap:24px;width:100%;max-width:380px;animation:fadeInUp .8s ease-out .3s both}
+        .home-btn{position:relative;width:100%;min-height:120px;border:3px solid var(--yp);background:rgba(245,197,24,.08);border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;transition:all .3s;user-select:none;-webkit-user-select:none}
+        .home-btn:active{transform:scale(.97)}
+        .home-btn-icon{font-size:36px;color:var(--yp);margin-bottom:8px}
+        .home-btn-label{font-size:22px;font-weight:800;color:var(--yp);text-align:center;letter-spacing:1px}
+        .home-btn-hint{font-size:13px;color:#888;margin-top:6px}
+        .home-btn .progress-bar{position:absolute;bottom:0;left:0;height:6px;background:var(--yp);border-radius:3px;width:0%}
+        .home-btn.holding{background:rgba(245,197,24,.15);border-color:var(--yl);box-shadow:0 0 30px rgba(245,197,24,.2)}
+        .home-btn.holding .progress-bar{animation:progressFill 2s linear forwards}
 
-        /* ===== ANIMATIONS ===== */
-        @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-        @keyframes progressFill {
-            from { width: 0%; }
-            to { width: 100%; }
-        }
-        @keyframes scanLine {
-            0%, 100% { top: 0; }
-            50% { top: calc(100% - 3px); }
-        }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-            20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-        @keyframes markerPulse {
-            0% { box-shadow: 0 0 0 0 rgba(245,197,24,0.5); }
-            70% { box-shadow: 0 0 0 20px rgba(245,197,24,0); }
-            100% { box-shadow: 0 0 0 0 rgba(245,197,24,0); }
-        }
+        /* PAGES */
+        .page{display:none;height:100%;width:100%;position:fixed;top:0;left:0;z-index:100;background:var(--bk);flex-direction:column}
+        .page.active{display:flex}
+        .page-header{display:flex;align-items:center;padding:12px 16px;padding-top:calc(var(--st) + 8px);background:var(--gd);border-bottom:3px solid var(--yp);min-height:70px;gap:12px;flex-shrink:0;z-index:50}
+        .back-btn{width:52px;height:52px;border:2px solid var(--yp);background:rgba(245,197,24,.1);border-radius:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+        .back-btn .material-icons{font-size:28px;color:var(--yp)}
+        .page-title{font-size:20px;font-weight:800;color:var(--yp);flex:1}
+        .page-content{flex:1;overflow-y:auto;padding:20px 16px;padding-bottom:calc(var(--sb) + 20px)}
 
-        /* ===== HOME SCREEN ===== */
-        #homeScreen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            padding: 20px;
-            padding-top: var(--safe-top);
-            padding-bottom: var(--safe-bottom);
-            background: linear-gradient(180deg, #1A1A1A 0%, #0D0D0D 100%);
-        }
+        /* PAGE 1 */
+        .text-input-label{font-size:18px;font-weight:700;color:var(--yp);margin-bottom:12px;display:block}
+        #textInput{width:100%;min-height:160px;background:var(--gd);border:3px solid var(--yp);border-radius:20px;color:var(--wh);font-size:22px;font-family:'Inter',sans-serif;padding:20px;resize:none;outline:none;line-height:1.5}
+        #textInput::placeholder{color:#666;font-size:20px}
+        #textInput:focus{border-color:var(--yl);box-shadow:0 0 20px rgba(245,197,24,.2)}
+        .char-count{text-align:right;color:#666;font-size:14px;margin-top:8px;margin-bottom:20px}
+        .action-buttons{display:flex;flex-direction:column;gap:16px;margin-bottom:24px}
+        .action-btn{width:100%;min-height:80px;border:3px solid var(--yp);background:var(--yp);border-radius:20px;display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;transition:all .2s}
+        .action-btn .material-icons{font-size:32px;color:var(--bk)}
+        .action-btn-text{font-size:24px;font-weight:900;color:var(--bk);letter-spacing:3px}
+        .action-btn:active{transform:scale(.96);background:var(--yd)}
+        .action-btn.secondary{background:rgba(245,197,24,.1)}
+        .action-btn.secondary .material-icons,.action-btn.secondary .action-btn-text{color:var(--yp)}
+        .action-btn.stop-btn{background:var(--dn);border-color:var(--dn)}
+        .action-btn.stop-btn .material-icons,.action-btn.stop-btn .action-btn-text{color:var(--wh)}
+        .haptic-display{background:var(--gd);border:2px solid #444;border-radius:20px;padding:20px;margin-bottom:20px;display:none}
+        .haptic-display.visible{display:block}
+        .haptic-display-title{font-size:16px;font-weight:700;color:var(--yp);margin-bottom:12px}
+        .haptic-current-char{font-size:72px;font-weight:900;color:var(--yp);text-align:center;padding:20px;text-shadow:0 0 30px rgba(245,197,24,.5)}
+        .haptic-pattern-display{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:12px}
+        .pattern-dot{border-radius:6px;background:var(--yp);opacity:.3;transition:all .15s}
+        .pattern-dot.short{width:16px;height:24px}
+        .pattern-dot.long{width:40px;height:24px}
+        .pattern-dot.active{opacity:1;box-shadow:0 0 12px rgba(245,197,24,.6)}
+        .haptic-progress{margin-top:16px;text-align:center;color:#888;font-size:14px}
+        .qr-message-display{background:var(--gd);border:2px solid var(--sc);border-radius:16px;padding:20px;margin-top:16px;display:none}
+        .qr-message-display.visible{display:block}
+        .qr-message-label{font-size:14px;color:var(--sc);font-weight:700;margin-bottom:8px}
+        .qr-message-text{font-size:24px;font-weight:700;color:var(--wh);word-break:break-word}
 
-        .home-logo-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 50px;
-            animation: fadeInDown 0.8s ease-out;
-        }
+        /* QR OVERLAY */
+        #qrOverlay{display:none;position:fixed;inset:0;z-index:500;background:var(--bk);flex-direction:column}
+        #qrOverlay.active{display:flex}
+        .qr-camera-header{display:flex;align-items:center;padding:12px 16px;padding-top:calc(var(--st) + 8px);background:rgba(0,0,0,.85);gap:12px;position:absolute;top:0;left:0;right:0;z-index:10}
+        .qr-camera-header .page-title{font-size:18px}
+        #qrVideo{width:100%;height:100%;object-fit:cover}
+        .qr-scan-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:260px;height:260px;border:4px solid var(--yp);border-radius:24px;box-shadow:0 0 0 9999px rgba(0,0,0,.5)}
+        .qr-scan-frame::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--yp);border-radius:2px;animation:scanLine 2s ease-in-out infinite}
+        .qr-scan-hint{position:absolute;bottom:120px;left:0;right:0;text-align:center;color:var(--yp);font-size:18px;font-weight:700}
+        #qrCanvas{display:none}
 
-        .hailey-icon {
-            width: 100px;
-            height: 100px;
-            background: var(--yellow-primary);
-            border-radius: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            box-shadow: 0 0 40px rgba(245,197,24,0.3), 0 8px 32px rgba(0,0,0,0.4);
-            position: relative;
-        }
+        /* PAGE 2 */
+        #page2 .page-content{padding:0;overflow:hidden;position:relative}
+        #mapWrapper{position:absolute;inset:0;z-index:1;display:none}
+        #map{width:100%;height:100%}
 
-        .hailey-icon .material-icons {
-            font-size: 52px;
-            color: var(--black);
-        }
+        /* ONBOARDING OVERLAY */
+        #onboardingOverlay{position:absolute;inset:0;z-index:30;background:var(--bk);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 24px;text-align:center}
+        #onboardingOverlay.hidden{display:none}
+        .onboard-icon{font-size:80px;color:var(--yp);margin-bottom:20px}
+        .onboard-title{font-size:30px;font-weight:900;color:var(--yp);margin-bottom:8px;letter-spacing:2px}
+        .onboard-sub{font-size:16px;color:#aaa;margin-bottom:36px;line-height:1.5}
+        .onboard-input-wrap{width:100%;max-width:360px;margin-bottom:24px}
+        .onboard-label{font-size:15px;font-weight:700;color:var(--yp);text-align:left;display:block;margin-bottom:10px}
+        .onboard-input{width:100%;height:64px;background:var(--gd);border:3px solid var(--yp);border-radius:18px;color:var(--wh);font-size:24px;font-family:'Inter',sans-serif;padding:0 20px;outline:none;text-align:center;letter-spacing:1px}
+        .onboard-input::placeholder{color:#555;font-size:20px}
+        .onboard-input:focus{border-color:var(--yl);box-shadow:0 0 20px rgba(245,197,24,.2)}
+        .onboard-btn{width:100%;max-width:360px;min-height:72px;background:var(--yp);border:none;border-radius:20px;font-size:22px;font-weight:800;color:var(--bk);cursor:pointer;letter-spacing:1px;transition:all .2s}
+        .onboard-btn:active{transform:scale(.96);background:var(--yd)}
+        .onboard-btn:disabled{opacity:.4;cursor:not-allowed}
+        .onboard-spinner{display:none;width:40px;height:40px;border:4px solid rgba(245,197,24,.2);border-top-color:var(--yp);border-radius:50%;animation:spin .8s linear infinite;margin:20px auto 0}
 
-        .hailey-icon::after {
-            content: '';
-            position: absolute;
-            inset: -4px;
-            border-radius: 32px;
-            border: 3px solid rgba(245,197,24,0.3);
-            animation: pulse 3s ease-in-out infinite;
-        }
+        /* H-CODE CARD */
+        .hcode-card{background:var(--gd);border:3px solid var(--yp);border-radius:20px;padding:28px 20px;width:100%;max-width:360px;margin-top:24px;display:none;text-align:center}
+        .hcode-card.visible{display:block;animation:fadeInUp .5s ease-out}
+        .hcode-label{font-size:14px;color:#888;font-weight:600;margin-bottom:6px;letter-spacing:1px}
+        .hcode-value{font-size:36px;font-weight:900;color:var(--yp);letter-spacing:4px;text-shadow:0 0 20px rgba(245,197,24,.3)}
+        .hcode-name{font-size:18px;color:var(--wh);margin-top:10px;font-weight:600}
 
-        .home-title {
-            font-size: 48px;
-            font-weight: 900;
-            color: var(--yellow-primary);
-            letter-spacing: 4px;
-            text-transform: uppercase;
-            text-shadow: 0 0 30px rgba(245,197,24,0.3);
-        }
+        /* PERMISSION */
+        .permission-screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center;background:var(--bk);z-index:20}
+        .permission-screen.hidden{display:none}
+        .permission-screen .material-icons{font-size:80px;color:var(--yp);margin-bottom:24px}
+        .permission-screen h2{font-size:28px;font-weight:800;color:var(--yp);margin-bottom:16px}
+        .permission-screen p{font-size:18px;color:#aaa;margin-bottom:40px;line-height:1.6}
+        .permission-btn{width:100%;max-width:320px;min-height:80px;background:var(--yp);border:none;border-radius:20px;font-size:22px;font-weight:800;color:var(--bk);cursor:pointer;letter-spacing:1px}
 
-        .home-subtitle {
-            font-size: 16px;
-            color: #888;
-            margin-top: 8px;
-            font-weight: 400;
-            letter-spacing: 1px;
-        }
+        /* EMERGENCY */
+        #emergencyModal{display:none;position:fixed;inset:0;z-index:9999;background:rgba(255,59,48,.95);flex-direction:column;align-items:center;justify-content:center;padding:40px}
+        #emergencyModal.active{display:flex;animation:shake .5s ease-in-out}
+        .emergency-icon{font-size:100px;color:var(--wh);margin-bottom:24px;animation:pulse .8s ease-in-out infinite}
+        .emergency-text{font-size:32px;font-weight:900;color:var(--wh);text-align:center;margin-bottom:40px;letter-spacing:2px}
+        .emergency-dismiss{width:100%;max-width:320px;min-height:80px;background:var(--wh);border:none;border-radius:20px;font-size:22px;font-weight:800;color:var(--dn);cursor:pointer;letter-spacing:1px}
 
-        .home-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-            width: 100%;
-            max-width: 380px;
-            animation: fadeInUp 0.8s ease-out 0.3s both;
-        }
+        /* TOAST */
+        .status-toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--gd);border:2px solid var(--yp);border-radius:16px;padding:14px 28px;color:var(--yp);font-size:16px;font-weight:700;z-index:8000;display:none;white-space:nowrap;max-width:90vw;text-align:center}
+        .status-toast.visible{display:block;animation:fadeInUp .3s ease-out}
 
-        .home-btn {
-            position: relative;
-            width: 100%;
-            min-height: 120px;
-            border: 3px solid var(--yellow-primary);
-            background: rgba(245,197,24,0.08);
-            border-radius: 24px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+        /* LEAFLET */
+        .leaflet-control-attribution{display:none!important}
+        .leaflet-control-zoom{display:none!important}
 
-        .home-btn:active { transform: scale(0.97); }
-
-        .home-btn-icon {
-            font-size: 36px;
-            color: var(--yellow-primary);
-            margin-bottom: 8px;
-        }
-
-        .home-btn-label {
-            font-size: 22px;
-            font-weight: 800;
-            color: var(--yellow-primary);
-            text-align: center;
-            letter-spacing: 1px;
-        }
-
-        .home-btn-hint {
-            font-size: 13px;
-            color: #888;
-            margin-top: 6px;
-        }
-
-        .home-btn .progress-bar {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            height: 6px;
-            background: var(--yellow-primary);
-            border-radius: 3px;
-            width: 0%;
-        }
-
-        .home-btn.holding {
-            background: rgba(245,197,24,0.15);
-            border-color: var(--yellow-light);
-            box-shadow: 0 0 30px rgba(245,197,24,0.2);
-        }
-
-        .home-btn.holding .progress-bar {
-            animation: progressFill 2s linear forwards;
-        }
-
-        /* ===== COMMON PAGE ===== */
-        .page {
-            display: none;
-            height: 100%;
-            width: 100%;
-            position: fixed;
-            top: 0; left: 0;
-            z-index: 100;
-            background: var(--black);
-            flex-direction: column;
-        }
-        .page.active { display: flex; }
-
-        .page-header {
-            display: flex;
-            align-items: center;
-            padding: 12px 16px;
-            padding-top: calc(var(--safe-top) + 8px);
-            background: var(--gray-dark);
-            border-bottom: 3px solid var(--yellow-primary);
-            min-height: 70px;
-            gap: 12px;
-            flex-shrink: 0;
-            z-index: 50;
-        }
-
-        .back-btn {
-            width: 52px;
-            height: 52px;
-            border: 2px solid var(--yellow-primary);
-            background: rgba(245,197,24,0.1);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-
-        .back-btn .material-icons {
-            font-size: 28px;
-            color: var(--yellow-primary);
-        }
-
-        .page-title {
-            font-size: 20px;
-            font-weight: 800;
-            color: var(--yellow-primary);
-            flex: 1;
-        }
-
-        .page-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px 16px;
-            padding-bottom: calc(var(--safe-bottom) + 20px);
-        }
-
-        /* ===== PAGE 1: TEXT TO HAPTICS ===== */
-        .text-input-label {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--yellow-primary);
-            margin-bottom: 12px;
-            display: block;
-        }
-
-        #textInput {
-            width: 100%;
-            min-height: 160px;
-            background: var(--gray-dark);
-            border: 3px solid var(--yellow-primary);
-            border-radius: 20px;
-            color: var(--white);
-            font-size: 22px;
-            font-family: 'Inter', sans-serif;
-            padding: 20px;
-            resize: none;
-            outline: none;
-            line-height: 1.5;
-        }
-        #textInput::placeholder { color: #666; font-size: 20px; }
-        #textInput:focus {
-            border-color: var(--yellow-light);
-            box-shadow: 0 0 20px rgba(245,197,24,0.2);
-        }
-
-        .char-count {
-            text-align: right;
-            color: #666;
-            font-size: 14px;
-            margin-top: 8px;
-            margin-bottom: 20px;
-        }
-
-        .action-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .action-btn {
-            width: 100%;
-            min-height: 80px;
-            border: 3px solid var(--yellow-primary);
-            background: var(--yellow-primary);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .action-btn .material-icons { font-size: 32px; color: var(--black); }
-        .action-btn-text {
-            font-size: 24px;
-            font-weight: 900;
-            color: var(--black);
-            letter-spacing: 3px;
-        }
-        .action-btn:active { transform: scale(0.96); background: var(--yellow-dark); }
-
-        .action-btn.secondary { background: rgba(245,197,24,0.1); }
-        .action-btn.secondary .material-icons,
-        .action-btn.secondary .action-btn-text { color: var(--yellow-primary); }
-
-        .action-btn.stop-btn { background: var(--danger); border-color: var(--danger); }
-        .action-btn.stop-btn .material-icons,
-        .action-btn.stop-btn .action-btn-text { color: var(--white); }
-
-        /* Haptic Display */
-        .haptic-display {
-            background: var(--gray-dark);
-            border: 2px solid #444;
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 20px;
-            display: none;
-        }
-        .haptic-display.visible { display: block; }
-
-        .haptic-display-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--yellow-primary);
-            margin-bottom: 12px;
-        }
-
-        .haptic-current-char {
-            font-size: 72px;
-            font-weight: 900;
-            color: var(--yellow-primary);
-            text-align: center;
-            padding: 20px;
-            text-shadow: 0 0 30px rgba(245,197,24,0.5);
-        }
-
-        .haptic-pattern-display {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-top: 12px;
-        }
-
-        .pattern-dot {
-            border-radius: 6px;
-            background: var(--yellow-primary);
-            opacity: 0.3;
-            transition: all 0.15s ease;
-        }
-        .pattern-dot.short { width: 16px; height: 24px; }
-        .pattern-dot.long { width: 40px; height: 24px; }
-        .pattern-dot.active {
-            opacity: 1;
-            box-shadow: 0 0 12px rgba(245,197,24,0.6);
-        }
-
-        .haptic-progress {
-            margin-top: 16px;
-            text-align: center;
-            color: #888;
-            font-size: 14px;
-        }
-
-        /* QR Message */
-        .qr-message-display {
-            background: var(--gray-dark);
-            border: 2px solid var(--success);
-            border-radius: 16px;
-            padding: 20px;
-            margin-top: 16px;
-            display: none;
-        }
-        .qr-message-display.visible { display: block; }
-        .qr-message-label { font-size: 14px; color: var(--success); font-weight: 700; margin-bottom: 8px; }
-        .qr-message-text { font-size: 24px; font-weight: 700; color: var(--white); word-break: break-word; }
-
-        /* QR Overlay */
-        #qrOverlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            z-index: 500;
-            background: var(--black);
-            flex-direction: column;
-        }
-        #qrOverlay.active { display: flex; }
-
-        .qr-camera-header {
-            display: flex;
-            align-items: center;
-            padding: 12px 16px;
-            padding-top: calc(var(--safe-top) + 8px);
-            background: rgba(0,0,0,0.85);
-            gap: 12px;
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            z-index: 10;
-        }
-        .qr-camera-header .page-title { font-size: 18px; }
-
-        #qrVideo {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .qr-scan-frame {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 260px; height: 260px;
-            border: 4px solid var(--yellow-primary);
-            border-radius: 24px;
-            box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
-        }
-        .qr-scan-frame::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            background: var(--yellow-primary);
-            border-radius: 2px;
-            animation: scanLine 2s ease-in-out infinite;
-        }
-
-        .qr-scan-hint {
-            position: absolute;
-            bottom: 120px;
-            left: 0; right: 0;
-            text-align: center;
-            color: var(--yellow-primary);
-            font-size: 18px;
-            font-weight: 700;
-        }
-
-        #qrCanvas { display: none; }
-
-        /* ===== PAGE 2: HAILEY DROP — FULL SCREEN MAP ===== */
-        #page2 .page-content {
-            padding: 0;
-            overflow: hidden;
-            position: relative;
-        }
-
-        #mapWrapper {
-            position: absolute;
-            inset: 0;
-            z-index: 1;
-        }
-
-        #map {
-            width: 100%;
-            height: 100%;
-        }
-
-        /* Permission overlay sits on top of map area */
-        .permission-screen {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 24px;
-            text-align: center;
-            background: var(--black);
-            z-index: 20;
-        }
-        .permission-screen.hidden { display: none; }
-
-        .permission-screen .material-icons {
-            font-size: 80px;
-            color: var(--yellow-primary);
-            margin-bottom: 24px;
-        }
-        .permission-screen h2 {
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--yellow-primary);
-            margin-bottom: 16px;
-        }
-        .permission-screen p {
-            font-size: 18px;
-            color: #aaa;
-            margin-bottom: 40px;
-            line-height: 1.6;
-        }
-        .permission-btn {
-            width: 100%;
-            max-width: 320px;
-            min-height: 80px;
-            background: var(--yellow-primary);
-            border: none;
-            border-radius: 20px;
-            font-size: 22px;
-            font-weight: 800;
-            color: var(--black);
-            cursor: pointer;
-            letter-spacing: 1px;
-        }
-
-        /* ===== EMERGENCY MODAL ===== */
-        #emergencyModal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            background: rgba(255,59,48,0.95);
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-        }
-        #emergencyModal.active {
-            display: flex;
-            animation: shake 0.5s ease-in-out;
-        }
-
-        .emergency-icon {
-            font-size: 100px;
-            color: var(--white);
-            margin-bottom: 24px;
-            animation: pulse 0.8s ease-in-out infinite;
-        }
-        .emergency-text {
-            font-size: 32px;
-            font-weight: 900;
-            color: var(--white);
-            text-align: center;
-            margin-bottom: 40px;
-            letter-spacing: 2px;
-        }
-        .emergency-dismiss {
-            width: 100%;
-            max-width: 320px;
-            min-height: 80px;
-            background: var(--white);
-            border: none;
-            border-radius: 20px;
-            font-size: 22px;
-            font-weight: 800;
-            color: var(--danger);
-            cursor: pointer;
-            letter-spacing: 1px;
-        }
-
-        /* ===== STATUS TOAST ===== */
-        .status-toast {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--gray-dark);
-            border: 2px solid var(--yellow-primary);
-            border-radius: 16px;
-            padding: 14px 28px;
-            color: var(--yellow-primary);
-            font-size: 16px;
-            font-weight: 700;
-            z-index: 8000;
-            display: none;
-            white-space: nowrap;
-            max-width: 90vw;
-            text-align: center;
-        }
-        .status-toast.visible {
-            display: block;
-            animation: fadeInUp 0.3s ease-out;
-        }
-
-        /* ===== LEAFLET OVERRIDES ===== */
-        .leaflet-control-attribution { display: none !important; }
-        .leaflet-control-zoom {
-            border: 2px solid var(--yellow-primary) !important;
-            border-radius: 12px !important;
-            overflow: hidden;
-        }
-        .leaflet-control-zoom a {
-            background: var(--gray-dark) !important;
-            color: var(--yellow-primary) !important;
-            width: 44px !important;
-            height: 44px !important;
-            line-height: 44px !important;
-            font-size: 22px !important;
-            border-bottom: 1px solid #444 !important;
-        }
-
-        /* ===== FOCUS ===== */
-        *:focus-visible {
-            outline: 3px solid var(--yellow-primary);
-            outline-offset: 4px;
-        }
-
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 380px) {
-            .home-title { font-size: 38px; }
-            .home-btn-label { font-size: 18px; }
-            .action-btn-text { font-size: 20px; }
-        }
+        *:focus-visible{outline:3px solid var(--yp);outline-offset:4px}
+        @media(max-width:380px){.home-title{font-size:38px}.home-btn-label{font-size:18px}.action-btn-text{font-size:20px}.hcode-value{font-size:28px}}
     </style>
 </head>
 <body>
 
-    <!-- =========== HOME SCREEN =========== -->
+    <!-- HOME -->
     <div id="homeScreen">
         <div class="home-logo-container">
-            <div class="hailey-icon" aria-hidden="true">
-                <span class="material-icons">accessibility_new</span>
-            </div>
+            <div class="hailey-icon" aria-hidden="true"><span class="material-icons">accessibility_new</span></div>
             <h1 class="home-title">Hailey</h1>
             <p class="home-subtitle">Made by Aveesha Ninsara</p>
         </div>
         <div class="home-buttons">
-            <div class="home-btn" id="btnTextToHaptics" role="button" tabindex="0"
-                 aria-label="Text to Hailey Haptics. Long press for 2 seconds to open.">
+            <div class="home-btn" id="btnTextToHaptics" role="button" tabindex="0" aria-label="Text to Hailey Haptics. Hold 2 seconds.">
                 <span class="material-icons home-btn-icon" aria-hidden="true">vibration</span>
                 <span class="home-btn-label">Text to Hailey Haptics</span>
                 <span class="home-btn-hint">Hold for 2 seconds</span>
                 <div class="progress-bar"></div>
             </div>
-            <div class="home-btn" id="btnHaileyDrop" role="button" tabindex="0"
-                 aria-label="Hailey Drop navigation. Long press for 2 seconds to open.">
+            <div class="home-btn" id="btnHaileyDrop" role="button" tabindex="0" aria-label="Hailey Drop. Hold 2 seconds.">
                 <span class="material-icons home-btn-icon" aria-hidden="true">explore</span>
                 <span class="home-btn-label">Hailey Drop</span>
                 <span class="home-btn-hint">Hold for 2 seconds</span>
@@ -660,35 +170,28 @@
         </div>
     </div>
 
-    <!-- =========== PAGE 1: TEXT TO HAPTICS =========== -->
+    <!-- PAGE 1 -->
     <div id="page1" class="page" role="main" aria-label="Text to Hailey Haptics">
         <div class="page-header">
-            <div class="back-btn" id="page1Back" role="button" tabindex="0" aria-label="Go back to home">
-                <span class="material-icons">arrow_back</span>
-            </div>
+            <div class="back-btn" id="page1Back" role="button" tabindex="0" aria-label="Go back"><span class="material-icons">arrow_back</span></div>
             <h2 class="page-title">Text to Hailey Haptics</h2>
         </div>
         <div class="page-content">
             <div>
                 <label class="text-input-label" for="textInput">Enter your text</label>
-                <textarea id="textInput" placeholder="Type or paste text here..."
-                          aria-label="Text input for haptic conversion"
-                          autocomplete="off" spellcheck="false"></textarea>
+                <textarea id="textInput" placeholder="Type or paste text here..." aria-label="Text input" autocomplete="off" spellcheck="false"></textarea>
                 <div class="char-count"><span id="charCount">0</span> characters</div>
             </div>
             <div class="action-buttons">
-                <div class="action-btn" id="btnHailyze" role="button" tabindex="0"
-                     aria-label="Convert text to haptic patterns">
+                <div class="action-btn" id="btnHailyze" role="button" tabindex="0" aria-label="Convert to haptics">
                     <span class="material-icons" aria-hidden="true">vibration</span>
                     <span class="action-btn-text">HAILYZE</span>
                 </div>
-                <div class="action-btn stop-btn" id="btnStopHaptics" role="button" tabindex="0"
-                     aria-label="Stop haptic playback" style="display:none;">
+                <div class="action-btn stop-btn" id="btnStopHaptics" role="button" tabindex="0" aria-label="Stop" style="display:none">
                     <span class="material-icons" aria-hidden="true">stop</span>
                     <span class="action-btn-text">STOP</span>
                 </div>
-                <div class="action-btn secondary" id="btnQrScan" role="button" tabindex="0"
-                     aria-label="Open QR code scanner">
+                <div class="action-btn secondary" id="btnQrScan" role="button" tabindex="0" aria-label="Scan QR">
                     <span class="material-icons" aria-hidden="true">qr_code_scanner</span>
                     <span class="action-btn-text">SCAN QR</span>
                 </div>
@@ -706,12 +209,10 @@
         </div>
     </div>
 
-    <!-- =========== QR SCANNER OVERLAY =========== -->
+    <!-- QR OVERLAY -->
     <div id="qrOverlay">
         <div class="qr-camera-header">
-            <div class="back-btn" id="qrCloseBtn" role="button" tabindex="0" aria-label="Close QR scanner">
-                <span class="material-icons">close</span>
-            </div>
+            <div class="back-btn" id="qrCloseBtn" role="button" tabindex="0" aria-label="Close QR"><span class="material-icons">close</span></div>
             <h2 class="page-title">Scanning for Hailey QR</h2>
         </div>
         <video id="qrVideo" autoplay playsinline></video>
@@ -720,567 +221,598 @@
         <canvas id="qrCanvas"></canvas>
     </div>
 
-    <!-- =========== PAGE 2: HAILEY DROP — CLEAN FULL MAP =========== -->
-    <div id="page2" class="page" role="main" aria-label="Hailey Drop Navigation">
+    <!-- PAGE 2 -->
+    <div id="page2" class="page" role="main" aria-label="Hailey Drop">
         <div class="page-header">
-            <div class="back-btn" id="page2Back" role="button" tabindex="0" aria-label="Go back to home">
-                <span class="material-icons">arrow_back</span>
-            </div>
+            <div class="back-btn" id="page2Back" role="button" tabindex="0" aria-label="Go back"><span class="material-icons">arrow_back</span></div>
             <h2 class="page-title">Hailey Drop</h2>
         </div>
         <div class="page-content">
-            <!-- Permission Screen -->
-            <div class="permission-screen" id="locationPermission">
+            <!-- ONBOARDING -->
+            <div id="onboardingOverlay">
+                <span class="material-icons onboard-icon" aria-hidden="true">person_add</span>
+                <div class="onboard-title">Welcome to Hailey</div>
+                <div class="onboard-sub">Enter your name to create your<br>unique Hailey identity.</div>
+                <div class="onboard-input-wrap">
+                    <label class="onboard-label" for="nameInput">Your Full Name</label>
+                    <input type="text" id="nameInput" class="onboard-input" placeholder="John Doe" autocomplete="name" aria-label="Enter your full name">
+                </div>
+                <button class="onboard-btn" id="btnCreateProfile" disabled aria-label="Create Hailey profile">CREATE MY H-CODE</button>
+                <div class="onboard-spinner" id="onboardSpinner"></div>
+                <div class="hcode-card" id="hcodeCard">
+                    <div class="hcode-label">YOUR H-CODE</div>
+                    <div class="hcode-value" id="hcodeValue">------H</div>
+                    <div class="hcode-name" id="hcodeName"></div>
+                </div>
+            </div>
+            <!-- PERMISSION -->
+            <div class="permission-screen hidden" id="locationPermission">
                 <span class="material-icons" aria-hidden="true">location_on</span>
                 <h2>Enable Location</h2>
-                <p>Hailey Drop needs your location to provide real-time navigation and obstacle alerts.</p>
-                <button class="permission-btn" id="btnGrantLocation" aria-label="Grant location permission">
-                    ENABLE LOCATION
-                </button>
+                <p>Hailey Drop needs your location for real-time navigation and alerts.</p>
+                <button class="permission-btn" id="btnGrantLocation" aria-label="Enable location">ENABLE LOCATION</button>
             </div>
-            <!-- Full Screen Map — No overlays, no widgets, just the map -->
-            <div id="mapWrapper" style="display:none;">
-                <div id="map"></div>
-            </div>
+            <!-- MAP -->
+            <div id="mapWrapper"><div id="map"></div></div>
         </div>
     </div>
 
-    <!-- =========== EMERGENCY MODAL =========== -->
-    <div id="emergencyModal" role="alertdialog" aria-label="Emergency alert activated">
+    <!-- EMERGENCY -->
+    <div id="emergencyModal" role="alertdialog" aria-label="Emergency alert">
         <span class="material-icons emergency-icon" aria-hidden="true">warning</span>
         <div class="emergency-text">EMERGENCY ALERT ACTIVATED</div>
-        <button class="emergency-dismiss" id="btnDismissEmergency" aria-label="Dismiss emergency alert">
-            DISMISS
-        </button>
+        <button class="emergency-dismiss" id="btnDismissEmergency" aria-label="Dismiss">DISMISS</button>
     </div>
 
-    <!-- =========== STATUS TOAST =========== -->
     <div class="status-toast" id="statusToast"></div>
 
-    <!-- =========== SCRIPTS =========== -->
+    <!-- LIBS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <script>
-    (function () {
+    (function(){
         'use strict';
 
-        /* =========================================================
-           HAILEY HAPTIC ALPHABET — Every character unique
-           S = short 80 ms   L = long 300 ms
-        ========================================================= */
-        const HAPTIC_MAP = {
-            'A': ['S'],
-            'B': ['L'],
-            'C': ['S','S'],
-            'D': ['L','S'],
-            'E': ['S','L'],
-            'F': ['L','L'],
-            'G': ['S','S','S'],
-            'H': ['L','L','L'],
-            'I': ['S','L','S'],
-            'J': ['L','S','L'],
-            'K': ['S','S','L'],
-            'L': ['L','L','S'],
-            'M': ['S','L','L'],
-            'N': ['L','S','S'],
-            'O': ['S','S','S','L'],
-            'P': ['L','L','L','S'],
-            'Q': ['S','L','S','L'],
-            'R': ['L','S','L','S'],
-            'S': ['S','S','L','S'],
-            'T': ['L','L','S','L'],
-            'U': ['S','L','L','S'],
-            'V': ['L','S','S','L'],
-            'W': ['S','S','S','S'],
-            'X': ['L','L','L','L'],
-            'Y': ['S','L','S','S'],
-            'Z': ['L','S','L','L'],
-            '0': ['L','L','L','L','L'],
-            '1': ['S','L','L','L','L'],
-            '2': ['S','S','L','L','L'],
-            '3': ['S','S','S','L','L'],
-            '4': ['S','S','S','S','L'],
-            '5': ['S','S','S','S','S'],
-            '6': ['L','S','S','S','S'],
-            '7': ['L','L','S','S','S'],
-            '8': ['L','L','L','S','S'],
-            '9': ['L','L','L','L','S'],
-            ' ': ['SPACE']
+        // ===================== FIREBASE =====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBxhaRpjccuhoKE3T8WYRihy1rDXtRhGO4",
+            authDomain: "ema-4-b10bd.firebaseapp.com",
+            databaseURL: "https://ema-4-b10bd-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ema-4-b10bd",
+            storageBucket: "ema-4-b10bd.firebasestorage.app",
+            messagingSenderId: "149141817573",
+            appId: "1:149141817573:web:409bfb4d9c2b84cf742c0c",
+            measurementId: "G-6NL4MPKC45"
         };
 
-        const SHORT_MS   = 80;
-        const LONG_MS    = 300;
-        const PART_PAUSE = 100;
-        const CHAR_PAUSE = 400;
-        const WORD_PAUSE = 800;
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-        /* =========================================================
-           STATE
-        ========================================================= */
-        let currentPage      = 'home';
-        let hapticPlaying     = false;
-        let hapticAbort       = false;
-        let qrStream          = null;
-        let qrScanning        = false;
-        let qrAnimFrame       = null;
-        let leafletMap        = null;
-        let userMarker        = null;
-        let pathLine          = null;
-        let pathCoords        = [];
-        let watchId           = null;
-        let lastLocation      = null;
-        let lastShakeTime     = 0;
-        let emergencyActive   = false;
-        let beepInterval      = null;
-        let hazardInterval    = null;
-        let movePulseInterval = null;
-        let audioCtx          = null;
-        let locationGranted   = false;
+        // ===================== USER STATE =====================
+        let userData = JSON.parse(localStorage.getItem('hailey_user') || 'null');
+        // { name: "John Doe", hcode: "123456-H", createdAt: "..." }
 
-        /* =========================================================
-           UTILITIES — vibration
-        ========================================================= */
-        const vib = (p) => { try { navigator.vibrate && navigator.vibrate(p); } catch(e){} };
-        const vibStrong   = () => vib([200]);
-        const vibDouble   = () => vib([150,80,150]);
-        const vibEmerg    = () => vib([500,100,500,100,500]);
-        const vibPulse    = () => vib([40]);
-        const vibStop     = () => { try { navigator.vibrate && navigator.vibrate(0); } catch(e){} };
-
-        /* =========================================================
-           UTILITIES — audio
-        ========================================================= */
-        function ac() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            return audioCtx;
+        function generateHCode() {
+            const num = Math.floor(100000 + Math.random() * 900000);
+            return num + '-H';
         }
 
-        function beep(freq, dur) {
-            try {
-                const c = ac(), o = c.createOscillator(), g = c.createGain();
-                o.connect(g); g.connect(c.destination);
-                o.frequency.value = freq || 880;
-                g.gain.value = 0.5;
-                o.start(); o.stop(c.currentTime + (dur || 0.15));
-            } catch(e){}
+        function getTimestamp() {
+            return new Date().toISOString();
         }
 
-        function startWarningBeeps() {
-            if (beepInterval) return;
-            beepInterval = setInterval(() => {
-                beep(880, 0.12);
-                setTimeout(() => beep(880, 0.12), 200);
-            }, 800);
+        function getUserRef() {
+            if (!userData) return null;
+            const safeCode = userData.hcode.replace(/[.#$/\[\]]/g, '_');
+            return db.ref('hailey/user/data/' + safeCode);
         }
 
-        function startEmergencyAlarm() {
-            stopBeeps();
-            beepInterval = setInterval(() => {
-                beep(1200, 0.2);
-                setTimeout(() => beep(1500, 0.2), 250);
-            }, 500);
+        function logEvent(type, details) {
+            if (!userData) return;
+            const ref = getUserRef();
+            if (!ref) return;
+
+            const event = {
+                type: type,
+                timestamp: getTimestamp(),
+                localTime: new Date().toLocaleString(),
+                location: lastLocation ? {
+                    lat: lastLocation.lat,
+                    lng: lastLocation.lng
+                } : null,
+                details: details || {}
+            };
+
+            ref.child('events').push(event);
+            ref.child('lastActivity').set(event);
         }
 
-        function stopBeeps() {
-            if (beepInterval) { clearInterval(beepInterval); beepInterval = null; }
+        function updateLocationInDB(lat, lng, speed) {
+            if (!userData) return;
+            const ref = getUserRef();
+            if (!ref) return;
+            ref.child('currentLocation').set({
+                lat: lat,
+                lng: lng,
+                speed: speed || 0,
+                updatedAt: getTimestamp()
+            });
         }
 
-        /* =========================================================
-           UTILITIES — toast
-        ========================================================= */
-        function toast(msg, ms) {
-            const t = document.getElementById('statusToast');
-            t.textContent = msg;
-            t.classList.add('visible');
-            clearTimeout(t._tid);
-            t._tid = setTimeout(() => t.classList.remove('visible'), ms || 2500);
+        function saveUserProfile(name, hcode) {
+            const safeCode = hcode.replace(/[.#$/\[\]]/g, '_');
+            const profile = {
+                name: name,
+                hcode: hcode,
+                createdAt: getTimestamp(),
+                device: navigator.userAgent,
+                status: 'active'
+            };
+            db.ref('hailey/user/data/' + safeCode + '/profile').set(profile);
+            logEvent('profile_created', { name: name, hcode: hcode });
         }
 
-        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+        // ===================== HAPTIC MAP =====================
+        const HAPTIC_MAP = {
+            'A':['S'],'B':['L'],'C':['S','S'],'D':['L','S'],'E':['S','L'],'F':['L','L'],
+            'G':['S','S','S'],'H':['L','L','L'],'I':['S','L','S'],'J':['L','S','L'],
+            'K':['S','S','L'],'L':['L','L','S'],'M':['S','L','L'],'N':['L','S','S'],
+            'O':['S','S','S','L'],'P':['L','L','L','S'],'Q':['S','L','S','L'],'R':['L','S','L','S'],
+            'S':['S','S','L','S'],'T':['L','L','S','L'],'U':['S','L','L','S'],'V':['L','S','S','L'],
+            'W':['S','S','S','S'],'X':['L','L','L','L'],'Y':['S','L','S','S'],'Z':['L','S','L','L'],
+            '0':['L','L','L','L','L'],'1':['S','L','L','L','L'],'2':['S','S','L','L','L'],
+            '3':['S','S','S','L','L'],'4':['S','S','S','S','L'],'5':['S','S','S','S','S'],
+            '6':['L','S','S','S','S'],'7':['L','L','S','S','S'],'8':['L','L','L','S','S'],
+            '9':['L','L','L','L','S'],' ':['SPACE']
+        };
+        const SHORT_MS=80,LONG_MS=300,PART_PAUSE=100,CHAR_PAUSE=400,WORD_PAUSE=800;
 
-        /* =========================================================
-           NAVIGATION
-        ========================================================= */
-        function showHome() {
-            document.getElementById('homeScreen').style.display = 'flex';
+        // ===================== STATE =====================
+        let currentPage='home';
+        let hapticPlaying=false, hapticAbort=false;
+        let qrStream=null, qrScanning=false, qrAnimFrame=null;
+        let leafletMap=null, userMarker=null, pathLine=null, pathCoords=[];
+        let watchId=null, lastLocation=null;
+        let lastShakeTime=0, emergencyActive=false;
+        let beepInterval=null, hazardInterval=null, movePulseInterval=null;
+        let audioCtx=null, locationGranted=false, hazardNow=false;
+        let onboardingDone = !!userData;
+
+        // ===================== VIBRATE =====================
+        const vib=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
+        const vibStrong=()=>vib([200]);
+        const vibDouble=()=>vib([150,80,150]);
+        const vibEmerg=()=>vib([500,100,500,100,500]);
+        const vibPulse=()=>vib([40]);
+        const vibStop=()=>{try{navigator.vibrate&&navigator.vibrate(0)}catch(e){}};
+
+        // ===================== AUDIO =====================
+        function ac(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
+        function beep(f,d){try{const c=ac(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=f||880;g.gain.value=.5;o.start();o.stop(c.currentTime+(d||.15))}catch(e){}}
+        function startWarningBeeps(){if(beepInterval)return;beepInterval=setInterval(()=>{beep(880,.12);setTimeout(()=>beep(880,.12),200)},800)}
+        function startEmergencyAlarm(){stopBeeps();beepInterval=setInterval(()=>{beep(1200,.2);setTimeout(()=>beep(1500,.2),250)},500)}
+        function stopBeeps(){if(beepInterval){clearInterval(beepInterval);beepInterval=null}}
+
+        // ===================== TOAST =====================
+        function toast(m,ms){const t=document.getElementById('statusToast');t.textContent=m;t.classList.add('visible');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('visible'),ms||2500)}
+        function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+        // ===================== NAVIGATION =====================
+        function showHome(){
+            document.getElementById('homeScreen').style.display='flex';
             document.getElementById('page1').classList.remove('active');
             document.getElementById('page2').classList.remove('active');
-            closeQr();
-            stopHaptic();
-            stopDrop();
-            currentPage = 'home';
+            closeQr(); stopHaptic(); stopDrop();
+            currentPage='home';
+            logEvent('navigate', { page: 'home' });
         }
-
-        function showPage1() {
-            document.getElementById('homeScreen').style.display = 'none';
+        function showPage1(){
+            document.getElementById('homeScreen').style.display='none';
             document.getElementById('page2').classList.remove('active');
             document.getElementById('page1').classList.add('active');
-            currentPage = 'page1';
-            vib([1000]); // 1 s entrance vibration
+            currentPage='page1';
+            vib([1000]);
+            logEvent('navigate', { page: 'text_to_haptics' });
         }
-
-        function showPage2() {
-            document.getElementById('homeScreen').style.display = 'none';
+        function showPage2(){
+            document.getElementById('homeScreen').style.display='none';
             document.getElementById('page1').classList.remove('active');
             document.getElementById('page2').classList.add('active');
-            currentPage = 'page2';
+            currentPage='page2';
+            logEvent('navigate', { page: 'hailey_drop' });
 
-            // If location already granted, make sure map shows & resizes
-            if (locationGranted && leafletMap) {
-                setTimeout(() => leafletMap.invalidateSize(), 200);
+            // Decide what to show
+            if (!onboardingDone) {
+                document.getElementById('onboardingOverlay').classList.remove('hidden');
+                document.getElementById('locationPermission').classList.add('hidden');
+                document.getElementById('mapWrapper').style.display='none';
+            } else if (!locationGranted) {
+                document.getElementById('onboardingOverlay').classList.add('hidden');
+                document.getElementById('locationPermission').classList.remove('hidden');
+                document.getElementById('mapWrapper').style.display='none';
+            } else {
+                document.getElementById('onboardingOverlay').classList.add('hidden');
+                document.getElementById('locationPermission').classList.add('hidden');
+                document.getElementById('mapWrapper').style.display='block';
+                if(leafletMap) setTimeout(()=>leafletMap.invalidateSize(),200);
             }
         }
 
-        /* =========================================================
-           HOME — LONG PRESS BUTTONS
-        ========================================================= */
-        function longPress(el, onStart, onDone, ms) {
-            let t = null, active = false;
-            const begin = () => {
-                if (active) return;
-                active = true;
-                el.classList.add('holding');
-                onStart();
-                t = setTimeout(() => { active = false; el.classList.remove('holding'); resetBar(); onDone(); }, ms);
-            };
-            const end = () => {
-                if (t) clearTimeout(t);
-                t = null; active = false;
-                el.classList.remove('holding');
-                resetBar();
-            };
-            const resetBar = () => {
-                const b = el.querySelector('.progress-bar');
-                if (b) { b.style.animation = 'none'; void b.offsetHeight; b.style.width = '0%'; }
-            };
-            el.addEventListener('touchstart', begin, {passive:true});
-            el.addEventListener('mousedown', begin);
-            ['touchend','touchcancel','mouseup','mouseleave'].forEach(e => el.addEventListener(e, end, {passive:true}));
+        // ===================== LONG PRESS =====================
+        function longPress(el,onS,onD,ms){
+            let t=null,a=false;
+            const begin=()=>{if(a)return;a=true;el.classList.add('holding');onS();t=setTimeout(()=>{a=false;el.classList.remove('holding');rbar();onD()},ms)};
+            const end=()=>{if(t)clearTimeout(t);t=null;a=false;el.classList.remove('holding');rbar()};
+            const rbar=()=>{const b=el.querySelector('.progress-bar');if(b){b.style.animation='none';void b.offsetHeight;b.style.width='0%'}};
+            el.addEventListener('touchstart',begin,{passive:true});
+            el.addEventListener('mousedown',begin);
+            ['touchend','touchcancel','mouseup','mouseleave'].forEach(e=>el.addEventListener(e,end,{passive:true}));
         }
 
-        longPress(document.getElementById('btnTextToHaptics'), vibStrong, showPage1, 2000);
-        longPress(document.getElementById('btnHaileyDrop'),    vibDouble, showPage2, 2000);
+        longPress(document.getElementById('btnTextToHaptics'),vibStrong,showPage1,2000);
+        longPress(document.getElementById('btnHaileyDrop'),vibDouble,showPage2,2000);
+        document.getElementById('page1Back').addEventListener('click',showHome);
+        document.getElementById('page2Back').addEventListener('click',showHome);
 
-        document.getElementById('page1Back').addEventListener('click', showHome);
-        document.getElementById('page2Back').addEventListener('click', showHome);
+        // ===================== ONBOARDING =====================
+        const nameInput = document.getElementById('nameInput');
+        const btnCreate = document.getElementById('btnCreateProfile');
+        const spinner = document.getElementById('onboardSpinner');
+        const hcodeCard = document.getElementById('hcodeCard');
 
-        /* =========================================================
-           PAGE 1 — HAPTICS ENGINE
-        ========================================================= */
-        const inp = document.getElementById('textInput');
-        const cnt = document.getElementById('charCount');
-        inp.addEventListener('input', () => { cnt.textContent = inp.value.length; });
-
-        document.getElementById('btnHailyze').addEventListener('click', () => {
-            const txt = inp.value.trim().toUpperCase();
-            if (!txt) { toast('Please enter some text first'); vib([100,50,100]); return; }
-            playHaptic(txt);
+        nameInput.addEventListener('input', () => {
+            const val = nameInput.value.trim();
+            btnCreate.disabled = val.length < 2;
         });
 
-        document.getElementById('btnStopHaptics').addEventListener('click', stopHaptic);
+        btnCreate.addEventListener('click', async () => {
+            const name = nameInput.value.trim();
+            if (name.length < 2) return;
 
-        function stopHaptic() {
-            hapticAbort = true; hapticPlaying = false; vibStop();
-            document.getElementById('btnHailyze').style.display = 'flex';
-            document.getElementById('btnStopHaptics').style.display = 'none';
+            btnCreate.disabled = true;
+            btnCreate.textContent = 'CREATING...';
+            spinner.style.display = 'block';
+            vib([100]);
+
+            await sleep(1500); // simulate processing
+
+            const hcode = generateHCode();
+            userData = {
+                name: name,
+                hcode: hcode,
+                createdAt: getTimestamp()
+            };
+
+            // Save locally
+            localStorage.setItem('hailey_user', JSON.stringify(userData));
+
+            // Save to Firebase
+            saveUserProfile(name, hcode);
+
+            // Show H-Code card
+            spinner.style.display = 'none';
+            btnCreate.style.display = 'none';
+            nameInput.disabled = true;
+
+            document.getElementById('hcodeValue').textContent = hcode;
+            document.getElementById('hcodeName').textContent = name;
+            hcodeCard.classList.add('visible');
+
+            vib([100,80,100,80,300]);
+            toast('H-Code created: ' + hcode, 3000);
+
+            onboardingDone = true;
+
+            // After 3 seconds, transition to location permission
+            await sleep(3000);
+            document.getElementById('onboardingOverlay').classList.add('hidden');
+            document.getElementById('locationPermission').classList.remove('hidden');
+        });
+
+        // ===================== PAGE 1: HAPTICS =====================
+        const inp=document.getElementById('textInput');
+        const cnt=document.getElementById('charCount');
+        inp.addEventListener('input',()=>{cnt.textContent=inp.value.length});
+
+        document.getElementById('btnHailyze').addEventListener('click',()=>{
+            const txt=inp.value.trim().toUpperCase();
+            if(!txt){toast('Please enter some text first');vib([100,50,100]);return}
+            logEvent('hailyze_start', { text: txt, charCount: txt.length });
+            playHaptic(txt);
+        });
+        document.getElementById('btnStopHaptics').addEventListener('click',stopHaptic);
+
+        function stopHaptic(){
+            hapticAbort=true;hapticPlaying=false;vibStop();
+            document.getElementById('btnHailyze').style.display='flex';
+            document.getElementById('btnStopHaptics').style.display='none';
             document.getElementById('hapticDisplay').classList.remove('visible');
         }
 
-        async function playHaptic(text) {
-            if (hapticPlaying) return;
-            hapticPlaying = true; hapticAbort = false;
-            document.getElementById('btnHailyze').style.display = 'none';
-            document.getElementById('btnStopHaptics').style.display = 'flex';
+        async function playHaptic(text){
+            if(hapticPlaying)return;
+            hapticPlaying=true;hapticAbort=false;
+            document.getElementById('btnHailyze').style.display='none';
+            document.getElementById('btnStopHaptics').style.display='flex';
             document.getElementById('hapticDisplay').classList.add('visible');
-
-            const chars = text.split('');
-            for (let i = 0; i < chars.length; i++) {
-                if (hapticAbort) break;
-                const ch = chars[i];
-                const pat = HAPTIC_MAP[ch];
-                document.getElementById('currentChar').textContent = ch === ' ' ? '␣' : ch;
-                document.getElementById('hapticProgress').textContent = `${i+1} / ${chars.length}`;
-
-                if (!pat) { await sleep(CHAR_PAUSE); continue; }
-
+            const chars=text.split('');
+            for(let i=0;i<chars.length;i++){
+                if(hapticAbort)break;
+                const ch=chars[i], pat=HAPTIC_MAP[ch];
+                document.getElementById('currentChar').textContent=ch===' '?'␣':ch;
+                document.getElementById('hapticProgress').textContent=`${i+1} / ${chars.length}`;
+                if(!pat){await sleep(CHAR_PAUSE);continue}
                 renderDots(pat);
-
-                if (ch === ' ') { await sleep(WORD_PAUSE); continue; }
-
-                for (let j = 0; j < pat.length; j++) {
-                    if (hapticAbort) break;
+                if(ch===' '){await sleep(WORD_PAUSE);continue}
+                for(let j=0;j<pat.length;j++){
+                    if(hapticAbort)break;
                     activateDot(j);
-                    const d = pat[j] === 'S' ? SHORT_MS : LONG_MS;
-                    vib([d]); await sleep(d);
-                    if (j < pat.length - 1) await sleep(PART_PAUSE);
+                    const d=pat[j]==='S'?SHORT_MS:LONG_MS;
+                    vib([d]);await sleep(d);
+                    if(j<pat.length-1)await sleep(PART_PAUSE);
                 }
-                if (!hapticAbort && i < chars.length - 1 && chars[i+1] !== ' ') await sleep(CHAR_PAUSE);
+                if(!hapticAbort&&i<chars.length-1&&chars[i+1]!==' ')await sleep(CHAR_PAUSE);
             }
-            if (!hapticAbort) toast('Haptic playback complete ✓');
+            if(!hapticAbort){
+                toast('Haptic playback complete ✓');
+                logEvent('hailyze_complete', { text: text });
+            }
             stopHaptic();
         }
 
-        function renderDots(pat) {
-            const c = document.getElementById('patternDisplay');
-            c.innerHTML = '';
-            if (pat[0] === 'SPACE') { c.innerHTML = '<span style="color:#666;font-size:16px">SPACE</span>'; return; }
-            pat.forEach(p => {
-                const d = document.createElement('div');
-                d.className = 'pattern-dot ' + (p === 'S' ? 'short' : 'long');
-                c.appendChild(d);
-            });
+        function renderDots(pat){
+            const c=document.getElementById('patternDisplay');c.innerHTML='';
+            if(pat[0]==='SPACE'){c.innerHTML='<span style="color:#666;font-size:16px">SPACE</span>';return}
+            pat.forEach(p=>{const d=document.createElement('div');d.className='pattern-dot '+(p==='S'?'short':'long');c.appendChild(d)});
         }
+        function activateDot(i){document.querySelectorAll('#patternDisplay .pattern-dot').forEach((d,j)=>d.classList.toggle('active',j===i))}
 
-        function activateDot(idx) {
-            document.querySelectorAll('#patternDisplay .pattern-dot').forEach((d,i) => d.classList.toggle('active', i===idx));
-        }
+        // ===================== QR =====================
+        document.getElementById('btnQrScan').addEventListener('click',openQr);
+        document.getElementById('qrCloseBtn').addEventListener('click',closeQr);
 
-        /* =========================================================
-           QR SCANNER
-        ========================================================= */
-        document.getElementById('btnQrScan').addEventListener('click', openQr);
-        document.getElementById('qrCloseBtn').addEventListener('click', closeQr);
-
-        async function openQr() {
-            try {
-                qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                document.getElementById('qrVideo').srcObject = qrStream;
+        async function openQr(){
+            try{
+                qrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+                document.getElementById('qrVideo').srcObject=qrStream;
                 document.getElementById('qrOverlay').classList.add('active');
-                qrScanning = true;
-                scanQr();
-            } catch(e) { toast('Camera access denied'); vib([100,50,100,50,100]); }
+                qrScanning=true;scanQrLoop();
+                logEvent('qr_scanner_opened', {});
+            }catch(e){toast('Camera access denied');vib([100,50,100,50,100])}
         }
-
-        function closeQr() {
-            qrScanning = false;
-            if (qrAnimFrame) cancelAnimationFrame(qrAnimFrame);
+        function closeQr(){
+            qrScanning=false;if(qrAnimFrame)cancelAnimationFrame(qrAnimFrame);
             document.getElementById('qrOverlay').classList.remove('active');
-            if (qrStream) { qrStream.getTracks().forEach(t => t.stop()); qrStream = null; }
-            document.getElementById('qrVideo').srcObject = null;
+            if(qrStream){qrStream.getTracks().forEach(t=>t.stop());qrStream=null}
+            document.getElementById('qrVideo').srcObject=null;
         }
-
-        function scanQr() {
-            if (!qrScanning) return;
-            const v = document.getElementById('qrVideo');
-            const c = document.getElementById('qrCanvas');
-            const x = c.getContext('2d', {willReadFrequently:true});
-            if (v.readyState === v.HAVE_ENOUGH_DATA) {
-                c.width = v.videoWidth; c.height = v.videoHeight;
-                x.drawImage(v, 0, 0, c.width, c.height);
-                const img = x.getImageData(0, 0, c.width, c.height);
-                if (typeof jsQR !== 'undefined') {
-                    const code = jsQR(img.data, img.width, img.height, {inversionAttempts:'dontInvert'});
-                    if (code && code.data) processQr(code.data);
+        function scanQrLoop(){
+            if(!qrScanning)return;
+            const v=document.getElementById('qrVideo'),c=document.getElementById('qrCanvas'),x=c.getContext('2d',{willReadFrequently:true});
+            if(v.readyState===v.HAVE_ENOUGH_DATA){
+                c.width=v.videoWidth;c.height=v.videoHeight;
+                x.drawImage(v,0,0,c.width,c.height);
+                const img=x.getImageData(0,0,c.width,c.height);
+                if(typeof jsQR!=='undefined'){
+                    const code=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+                    if(code&&code.data)processQr(code.data);
                 }
             }
-            qrAnimFrame = requestAnimationFrame(scanQr);
+            qrAnimFrame=requestAnimationFrame(scanQrLoop);
         }
-
-        function processQr(data) {
-            const prefix = 'hailey::::';
-            if (!data.startsWith(prefix)) return;
-            const msg = data.substring(prefix.length).trim();
-            if (!msg) return;
-            closeQr();
-            vib([200,100,200]);
-            toast('Hailey QR detected!');
+        function processQr(data){
+            const prefix='hailey::::';
+            if(!data.startsWith(prefix))return;
+            const msg=data.substring(prefix.length).trim();
+            if(!msg)return;
+            closeQr();vib([200,100,200]);toast('Hailey QR detected!');
             document.getElementById('qrMessageDisplay').classList.add('visible');
-            document.getElementById('qrMessageText').textContent = msg;
-            inp.value = msg;
-            cnt.textContent = msg.length;
+            document.getElementById('qrMessageText').textContent=msg;
+            inp.value=msg;cnt.textContent=msg.length;
+            logEvent('qr_scanned', { message: msg });
         }
 
-        /* =========================================================
-           PAGE 2 — HAILEY DROP  (clean full-screen map, no widgets)
-        ========================================================= */
-        document.getElementById('btnGrantLocation').addEventListener('click', requestLoc);
+        // ===================== HAILEY DROP =====================
+        document.getElementById('btnGrantLocation').addEventListener('click',requestLoc);
 
-        async function requestLoc() {
-            try {
-                const pos = await new Promise((res, rej) =>
-                    navigator.geolocation.getCurrentPosition(res, rej, {enableHighAccuracy:true, timeout:10000})
-                );
-                locationGranted = true;
+        async function requestLoc(){
+            try{
+                const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{enableHighAccuracy:true,timeout:10000}));
+                locationGranted=true;
                 document.getElementById('locationPermission').classList.add('hidden');
-                document.getElementById('mapWrapper').style.display = 'block';
+                document.getElementById('mapWrapper').style.display='block';
                 vib([200]);
-                initMap(pos.coords.latitude, pos.coords.longitude);
+                initMap(pos.coords.latitude,pos.coords.longitude);
                 startWatch();
                 startHazardLoop();
                 startMovePulse();
-            } catch(e) {
+                logEvent('location_granted', {
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude
+                });
+            }catch(e){
                 toast('Location permission denied');
                 vib([100,50,100,50,100]);
+                logEvent('location_denied', {});
             }
         }
 
-        function initMap(lat, lng) {
-            if (leafletMap) { leafletMap.remove(); leafletMap = null; }
-
-            leafletMap = L.map('map', {
-                center: [lat, lng],
-                zoom: 18,
-                zoomControl: false,       // hide zoom buttons — cleaner
-                attributionControl: false  // hide attribution — cleaner
+        function initMap(lat,lng){
+            if(leafletMap){leafletMap.remove();leafletMap=null}
+            leafletMap=L.map('map',{center:[lat,lng],zoom:18,zoomControl:false,attributionControl:false});
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:20}).addTo(leafletMap);
+            const icon=L.divIcon({
+                html:'<div style="width:22px;height:22px;background:#F5C518;border:4px solid #fff;border-radius:50%;box-shadow:0 0 18px rgba(245,197,24,.7);animation:markerPulse 2s infinite"></div>',
+                iconSize:[22,22],iconAnchor:[11,11],className:''
             });
-
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                maxZoom: 20
-            }).addTo(leafletMap);
-
-            const icon = L.divIcon({
-                html: `<div style="
-                    width:22px;height:22px;
-                    background:#F5C518;
-                    border:4px solid #fff;
-                    border-radius:50%;
-                    box-shadow:0 0 18px rgba(245,197,24,0.7);
-                    animation: markerPulse 2s infinite;
-                "></div>`,
-                iconSize: [22,22],
-                iconAnchor: [11,11],
-                className: ''
-            });
-
-            userMarker = L.marker([lat, lng], {icon}).addTo(leafletMap);
-            pathCoords = [[lat, lng]];
-            pathLine = L.polyline(pathCoords, {color:'#F5C518', weight:4, opacity:0.7}).addTo(leafletMap);
-            lastLocation = {lat, lng, time: Date.now()};
-
-            // Inject the marker-pulse keyframe into the map container
-            const style = document.createElement('style');
-            style.textContent = `@keyframes markerPulse{0%{box-shadow:0 0 0 0 rgba(245,197,24,.5)}70%{box-shadow:0 0 0 18px rgba(245,197,24,0)}100%{box-shadow:0 0 0 0 rgba(245,197,24,0)}}`;
-            document.getElementById('map').appendChild(style);
-
-            setTimeout(() => leafletMap.invalidateSize(), 300);
+            userMarker=L.marker([lat,lng],{icon}).addTo(leafletMap);
+            pathCoords=[[lat,lng]];
+            pathLine=L.polyline(pathCoords,{color:'#F5C518',weight:4,opacity:.7}).addTo(leafletMap);
+            lastLocation={lat,lng,time:Date.now()};
+            const s=document.createElement('style');
+            s.textContent='@keyframes markerPulse{0%{box-shadow:0 0 0 0 rgba(245,197,24,.5)}70%{box-shadow:0 0 0 18px rgba(245,197,24,0)}100%{box-shadow:0 0 0 0 rgba(245,197,24,0)}}';
+            document.getElementById('map').appendChild(s);
+            setTimeout(()=>leafletMap.invalidateSize(),300);
+            updateLocationInDB(lat, lng, 0);
         }
 
-        function startWatch() {
-            watchId = navigator.geolocation.watchPosition(
-                pos => updatePos(pos.coords.latitude, pos.coords.longitude),
-                () => {},
-                {enableHighAccuracy:true, maximumAge:0, timeout:5000}
+        function startWatch(){
+            watchId=navigator.geolocation.watchPosition(
+                pos=>{
+                    const{latitude:lat,longitude:lng,speed:spd}=pos.coords;
+                    updatePos(lat,lng,spd||0);
+                },()=>{},{enableHighAccuracy:true,maximumAge:0,timeout:5000}
             );
         }
 
-        function updatePos(lat, lng) {
-            if (!leafletMap || !userMarker) return;
-            userMarker.setLatLng([lat, lng]);
-            leafletMap.panTo([lat, lng], {animate:true, duration:0.5});
-            pathCoords.push([lat, lng]);
-            if (pathCoords.length > 500) pathCoords.shift();
+        let dbUpdateCounter = 0;
+        function updatePos(lat,lng,speed){
+            if(!leafletMap||!userMarker)return;
+            userMarker.setLatLng([lat,lng]);
+            leafletMap.panTo([lat,lng],{animate:true,duration:.5});
+            pathCoords.push([lat,lng]);
+            if(pathCoords.length>500)pathCoords.shift();
             pathLine.setLatLngs(pathCoords);
-
-            if (lastLocation) {
-                const d = dist(lastLocation.lat, lastLocation.lng, lat, lng);
-                if (d > 1) vibPulse();   // gentle walking pulse
+            if(lastLocation){
+                const d=dist(lastLocation.lat,lastLocation.lng,lat,lng);
+                if(d>1)vibPulse();
             }
-            lastLocation = {lat, lng, time: Date.now()};
+            lastLocation={lat,lng,time:Date.now()};
+
+            // Update DB every 5th position update to save bandwidth
+            dbUpdateCounter++;
+            if (dbUpdateCounter % 5 === 0) {
+                updateLocationInDB(lat, lng, speed);
+            }
         }
 
-        function dist(a,b,c,d) {
-            const R=6371000, dL=(c-a)*Math.PI/180, dN=(d-b)*Math.PI/180;
+        function dist(a,b,c,d){
+            const R=6371000,dL=(c-a)*Math.PI/180,dN=(d-b)*Math.PI/180;
             const x=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dN/2)**2;
             return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
         }
 
-        /* Hazard / detection — runs silently, vibrates on danger */
-        let hazardNow = false;
-
-        function startHazardLoop() {
-            hazardInterval = setInterval(() => {
-                if (currentPage !== 'page2') return;
-                const danger = Math.random() < 0.06;
-                if (danger && !hazardNow) {
-                    hazardNow = true;
-                    vibEmerg();
-                    startWarningBeeps();
-                    toast('⚠️ HAZARD DETECTED NEARBY!', 3000);
-                } else if (!danger && hazardNow && Math.random() > 0.5) {
-                    hazardNow = false;
-                    stopBeeps(); vibStop();
+        function startHazardLoop(){
+            hazardInterval=setInterval(()=>{
+                if(currentPage!=='page2')return;
+                const danger=Math.random()<.06;
+                if(danger&&!hazardNow){
+                    hazardNow=true;vibEmerg();startWarningBeeps();
+                    toast('⚠️ HAZARD DETECTED NEARBY!',3000);
+                    logEvent('hazard_detected', {
+                        severity: 'high',
+                        location: lastLocation ? { lat: lastLocation.lat, lng: lastLocation.lng } : null
+                    });
+                }else if(!danger&&hazardNow&&Math.random()>.5){
+                    hazardNow=false;stopBeeps();vibStop();
                     toast('✓ Hazard cleared');
+                    logEvent('hazard_cleared', {});
                 }
-            }, 3000);
+            },3000);
         }
 
-        function startMovePulse() {
-            movePulseInterval = setInterval(() => {
-                if (currentPage !== 'page2' || !lastLocation) return;
+        function startMovePulse(){
+            movePulseInterval=setInterval(()=>{
+                if(currentPage!=='page2'||!lastLocation)return;
                 vibPulse();
-            }, 3500);
+            },3500);
         }
 
-        function stopDrop() {
-            if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
-            if (hazardInterval) { clearInterval(hazardInterval); hazardInterval = null; }
-            if (movePulseInterval) { clearInterval(movePulseInterval); movePulseInterval = null; }
-            hazardNow = false;
-            stopBeeps(); vibStop();
+        function stopDrop(){
+            if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null}
+            if(hazardInterval){clearInterval(hazardInterval);hazardInterval=null}
+            if(movePulseInterval){clearInterval(movePulseInterval);movePulseInterval=null}
+            hazardNow=false;stopBeeps();vibStop();
         }
 
-        /* =========================================================
-           SHAKE DETECTION
-        ========================================================= */
-        let prevAcc = {x:0, y:0, z:0};
-
-        function initShake() {
-            const listen = () => window.addEventListener('devicemotion', onMotion);
-            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-                document.body.addEventListener('click', () => {
-                    DeviceMotionEvent.requestPermission().then(r => { if (r === 'granted') listen(); }).catch(()=>{});
-                }, {once:true});
-            } else if (window.DeviceMotionEvent) {
-                listen();
-            }
+        // ===================== SHAKE =====================
+        let prevAcc={x:0,y:0,z:0};
+        function initShake(){
+            const listen=()=>window.addEventListener('devicemotion',onMotion);
+            if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){
+                document.body.addEventListener('click',()=>{
+                    DeviceMotionEvent.requestPermission().then(r=>{if(r==='granted')listen()}).catch(()=>{});
+                },{once:true});
+            }else if(window.DeviceMotionEvent){listen()}
         }
-
-        function onMotion(e) {
-            const a = e.accelerationIncludingGravity;
-            if (!a) return;
-            const d = Math.abs(a.x - prevAcc.x) + Math.abs(a.y - prevAcc.y) + Math.abs(a.z - prevAcc.z);
-            prevAcc = {x:a.x, y:a.y, z:a.z};
-            if (d > 30) {
-                const now = Date.now();
-                if (now - lastShakeTime > 1000) { lastShakeTime = now; onShake(); }
-            }
+        function onMotion(e){
+            const a=e.accelerationIncludingGravity;if(!a)return;
+            const d=Math.abs(a.x-prevAcc.x)+Math.abs(a.y-prevAcc.y)+Math.abs(a.z-prevAcc.z);
+            prevAcc={x:a.x,y:a.y,z:a.z};
+            if(d>30){const now=Date.now();if(now-lastShakeTime>1000){lastShakeTime=now;onShake()}}
         }
-
-        function onShake() {
-            if (currentPage === 'page2') { triggerEmergency(); return; }
-            if (qrScanning) { closeQr(); vibStrong(); toast('QR Scanner closed'); return; }
-            if (currentPage === 'page1') { vibStrong(); showHome(); toast('Returned to Home'); return; }
+        function onShake(){
+            if(currentPage==='page2'){triggerEmergency();return}
+            if(qrScanning){closeQr();vibStrong();toast('QR Scanner closed');return}
+            if(currentPage==='page1'){vibStrong();showHome();toast('Returned to Home');return}
         }
+        document.addEventListener('keydown',e=>{if(e.key==='Escape')onShake()});
 
-        /* Desktop fallback */
-        document.addEventListener('keydown', e => { if (e.key === 'Escape') onShake(); });
-
-        /* =========================================================
-           EMERGENCY ALERT
-        ========================================================= */
-        function triggerEmergency() {
-            if (emergencyActive) return;
-            emergencyActive = true;
-            vibEmerg();
-            startEmergencyAlarm();
+        // ===================== EMERGENCY =====================
+        function triggerEmergency(){
+            if(emergencyActive)return;
+            emergencyActive=true;
+            vibEmerg();startEmergencyAlarm();
             document.getElementById('emergencyModal').classList.add('active');
+
+            logEvent('emergency_triggered', {
+                location: lastLocation ? { lat: lastLocation.lat, lng: lastLocation.lng } : null,
+                method: 'shake'
+            });
+
+            // Also update a special emergency node
+            if (userData) {
+                const ref = getUserRef();
+                if (ref) {
+                    ref.child('emergency').set({
+                        active: true,
+                        triggeredAt: getTimestamp(),
+                        location: lastLocation ? { lat: lastLocation.lat, lng: lastLocation.lng } : null,
+                        userName: userData.name,
+                        hcode: userData.hcode
+                    });
+                }
+            }
         }
 
-        document.getElementById('btnDismissEmergency').addEventListener('click', () => {
-            emergencyActive = false;
-            stopBeeps(); vibStop();
+        document.getElementById('btnDismissEmergency').addEventListener('click',()=>{
+            emergencyActive=false;stopBeeps();vibStop();
             document.getElementById('emergencyModal').classList.remove('active');
             toast('Emergency alert dismissed');
+
+            logEvent('emergency_dismissed', {});
+            if (userData) {
+                const ref = getUserRef();
+                if (ref) {
+                    ref.child('emergency').set({
+                        active: false,
+                        dismissedAt: getTimestamp(),
+                        location: lastLocation ? { lat: lastLocation.lat, lng: lastLocation.lng } : null
+                    });
+                }
+            }
         });
 
-        /* =========================================================
-           INIT
-        ========================================================= */
+        // ===================== INIT =====================
         initShake();
-        ['touchstart','click'].forEach(ev =>
-            document.addEventListener(ev, () => { if (!audioCtx) ac(); }, {once:true})
-        );
+        ['touchstart','click'].forEach(ev=>document.addEventListener(ev,()=>{if(!audioCtx)ac()},{once:true}));
+
+        // If user already onboarded, mark it
+        if (userData) {
+            onboardingDone = true;
+            // Update online status
+            const ref = getUserRef();
+            if (ref) {
+                ref.child('profile/lastLogin').set(getTimestamp());
+                ref.child('profile/status').set('online');
+                // Set offline on disconnect
+                ref.child('profile/status').onDisconnect().set('offline');
+                ref.child('profile/lastSeen').onDisconnect().set(getTimestamp());
+            }
+        }
 
     })();
     </script>
