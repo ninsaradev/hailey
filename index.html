@@ -7,6 +7,7 @@
     <title>Hailey - Accessibility Assistant</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         *, *::before, *::after {
             margin: 0;
@@ -20,9 +21,9 @@
             --yellow-light: #FFE066;
             --yellow-dark: #C9A000;
             --black: #1A1A1A;
+            --black-deep: #0D0D0D;
             --white: #FFFFFF;
             --gray-dark: #2D2D2D;
-            --gray-medium: #4A4A4A;
             --danger: #FF3B30;
             --success: #34C759;
             --safe-top: env(safe-area-inset-top, 20px);
@@ -38,7 +39,39 @@
             touch-action: manipulation;
         }
 
-        /* ========== HOME SCREEN ========== */
+        /* ===== ANIMATIONS ===== */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        @keyframes progressFill {
+            from { width: 0%; }
+            to { width: 100%; }
+        }
+        @keyframes scanLine {
+            0%, 100% { top: 0; }
+            50% { top: calc(100% - 3px); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        @keyframes markerPulse {
+            0% { box-shadow: 0 0 0 0 rgba(245,197,24,0.5); }
+            70% { box-shadow: 0 0 0 20px rgba(245,197,24,0); }
+            100% { box-shadow: 0 0 0 0 rgba(245,197,24,0); }
+        }
+
+        /* ===== HOME SCREEN ===== */
         #homeScreen {
             display: flex;
             flex-direction: column;
@@ -49,7 +82,6 @@
             padding-top: var(--safe-top);
             padding-bottom: var(--safe-bottom);
             background: linear-gradient(180deg, #1A1A1A 0%, #0D0D0D 100%);
-            position: relative;
         }
 
         .home-logo-container {
@@ -58,37 +90,6 @@
             align-items: center;
             margin-bottom: 50px;
             animation: fadeInDown 0.8s ease-out;
-        }
-
-        @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        @keyframes ripple {
-            0% { transform: scale(0.8); opacity: 1; }
-            100% { transform: scale(2.5); opacity: 0; }
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-            20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-
-        @keyframes progressFill {
-            from { width: 0%; }
-            to { width: 100%; }
         }
 
         .hailey-icon {
@@ -100,9 +101,7 @@
             align-items: center;
             justify-content: center;
             margin-bottom: 20px;
-            box-shadow: 
-                0 0 40px rgba(245, 197, 24, 0.3),
-                0 8px 32px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 40px rgba(245,197,24,0.3), 0 8px 32px rgba(0,0,0,0.4);
             position: relative;
         }
 
@@ -116,7 +115,7 @@
             position: absolute;
             inset: -4px;
             border-radius: 32px;
-            border: 3px solid rgba(245, 197, 24, 0.3);
+            border: 3px solid rgba(245,197,24,0.3);
             animation: pulse 3s ease-in-out infinite;
         }
 
@@ -126,7 +125,7 @@
             color: var(--yellow-primary);
             letter-spacing: 4px;
             text-transform: uppercase;
-            text-shadow: 0 0 30px rgba(245, 197, 24, 0.3);
+            text-shadow: 0 0 30px rgba(245,197,24,0.3);
         }
 
         .home-subtitle {
@@ -151,7 +150,7 @@
             width: 100%;
             min-height: 120px;
             border: 3px solid var(--yellow-primary);
-            background: rgba(245, 197, 24, 0.08);
+            background: rgba(245,197,24,0.08);
             border-radius: 24px;
             display: flex;
             flex-direction: column;
@@ -160,13 +159,11 @@
             cursor: pointer;
             overflow: hidden;
             transition: all 0.3s ease;
-            -webkit-user-select: none;
             user-select: none;
+            -webkit-user-select: none;
         }
 
-        .home-btn:active {
-            transform: scale(0.97);
-        }
+        .home-btn:active { transform: scale(0.97); }
 
         .home-btn-icon {
             font-size: 36px;
@@ -196,45 +193,30 @@
             background: var(--yellow-primary);
             border-radius: 3px;
             width: 0%;
-            transition: none;
-        }
-
-        .home-btn .ripple-effect {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(245, 197, 24, 0.2);
-            width: 40px;
-            height: 40px;
-            pointer-events: none;
-            animation: ripple 0.6s ease-out forwards;
         }
 
         .home-btn.holding {
-            background: rgba(245, 197, 24, 0.15);
+            background: rgba(245,197,24,0.15);
             border-color: var(--yellow-light);
-            box-shadow: 0 0 30px rgba(245, 197, 24, 0.2);
+            box-shadow: 0 0 30px rgba(245,197,24,0.2);
         }
 
         .home-btn.holding .progress-bar {
             animation: progressFill 2s linear forwards;
         }
 
-        /* ========== COMMON PAGE STYLES ========== */
+        /* ===== COMMON PAGE ===== */
         .page {
             display: none;
             height: 100%;
             width: 100%;
             position: fixed;
-            top: 0;
-            left: 0;
+            top: 0; left: 0;
             z-index: 100;
             background: var(--black);
             flex-direction: column;
         }
-
-        .page.active {
-            display: flex;
-        }
+        .page.active { display: flex; }
 
         .page-header {
             display: flex;
@@ -246,13 +228,14 @@
             min-height: 70px;
             gap: 12px;
             flex-shrink: 0;
+            z-index: 50;
         }
 
         .back-btn {
             width: 52px;
             height: 52px;
             border: 2px solid var(--yellow-primary);
-            background: rgba(245, 197, 24, 0.1);
+            background: rgba(245,197,24,0.1);
             border-radius: 16px;
             display: flex;
             align-items: center;
@@ -280,11 +263,7 @@
             padding-bottom: calc(var(--safe-bottom) + 20px);
         }
 
-        /* ========== PAGE 1: TEXT TO HAPTICS ========== */
-        .text-input-container {
-            margin-bottom: 20px;
-        }
-
+        /* ===== PAGE 1: TEXT TO HAPTICS ===== */
         .text-input-label {
             font-size: 18px;
             font-weight: 700;
@@ -307,15 +286,10 @@
             outline: none;
             line-height: 1.5;
         }
-
-        #textInput::placeholder {
-            color: #666;
-            font-size: 20px;
-        }
-
+        #textInput::placeholder { color: #666; font-size: 20px; }
         #textInput:focus {
             border-color: var(--yellow-light);
-            box-shadow: 0 0 20px rgba(245, 197, 24, 0.2);
+            box-shadow: 0 0 20px rgba(245,197,24,0.2);
         }
 
         .char-count {
@@ -323,6 +297,7 @@
             color: #666;
             font-size: 14px;
             margin-top: 8px;
+            margin-bottom: 20px;
         }
 
         .action-buttons {
@@ -345,42 +320,22 @@
             cursor: pointer;
             transition: all 0.2s ease;
         }
-
-        .action-btn .material-icons {
-            font-size: 32px;
-            color: var(--black);
-        }
-
+        .action-btn .material-icons { font-size: 32px; color: var(--black); }
         .action-btn-text {
             font-size: 24px;
             font-weight: 900;
             color: var(--black);
             letter-spacing: 3px;
         }
+        .action-btn:active { transform: scale(0.96); background: var(--yellow-dark); }
 
-        .action-btn:active {
-            transform: scale(0.96);
-            background: var(--yellow-dark);
-        }
-
-        .action-btn.secondary {
-            background: rgba(245, 197, 24, 0.1);
-        }
-
+        .action-btn.secondary { background: rgba(245,197,24,0.1); }
         .action-btn.secondary .material-icons,
-        .action-btn.secondary .action-btn-text {
-            color: var(--yellow-primary);
-        }
+        .action-btn.secondary .action-btn-text { color: var(--yellow-primary); }
 
-        .action-btn.stop-btn {
-            background: var(--danger);
-            border-color: var(--danger);
-        }
-
+        .action-btn.stop-btn { background: var(--danger); border-color: var(--danger); }
         .action-btn.stop-btn .material-icons,
-        .action-btn.stop-btn .action-btn-text {
-            color: var(--white);
-        }
+        .action-btn.stop-btn .action-btn-text { color: var(--white); }
 
         /* Haptic Display */
         .haptic-display {
@@ -391,10 +346,7 @@
             margin-bottom: 20px;
             display: none;
         }
-
-        .haptic-display.visible {
-            display: block;
-        }
+        .haptic-display.visible { display: block; }
 
         .haptic-display-title {
             font-size: 16px;
@@ -409,7 +361,7 @@
             color: var(--yellow-primary);
             text-align: center;
             padding: 20px;
-            text-shadow: 0 0 30px rgba(245, 197, 24, 0.5);
+            text-shadow: 0 0 30px rgba(245,197,24,0.5);
         }
 
         .haptic-pattern-display {
@@ -427,20 +379,11 @@
             opacity: 0.3;
             transition: all 0.15s ease;
         }
-
-        .pattern-dot.short {
-            width: 16px;
-            height: 24px;
-        }
-
-        .pattern-dot.long {
-            width: 40px;
-            height: 24px;
-        }
-
+        .pattern-dot.short { width: 16px; height: 24px; }
+        .pattern-dot.long { width: 40px; height: 24px; }
         .pattern-dot.active {
             opacity: 1;
-            box-shadow: 0 0 12px rgba(245, 197, 24, 0.6);
+            box-shadow: 0 0 12px rgba(245,197,24,0.6);
         }
 
         .haptic-progress {
@@ -450,11 +393,7 @@
             font-size: 14px;
         }
 
-        /* QR Section */
-        .qr-section {
-            margin-top: 10px;
-        }
-
+        /* QR Message */
         .qr-message-display {
             background: var(--gray-dark);
             border: 2px solid var(--success);
@@ -463,26 +402,11 @@
             margin-top: 16px;
             display: none;
         }
+        .qr-message-display.visible { display: block; }
+        .qr-message-label { font-size: 14px; color: var(--success); font-weight: 700; margin-bottom: 8px; }
+        .qr-message-text { font-size: 24px; font-weight: 700; color: var(--white); word-break: break-word; }
 
-        .qr-message-display.visible {
-            display: block;
-        }
-
-        .qr-message-label {
-            font-size: 14px;
-            color: var(--success);
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .qr-message-text {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--white);
-            word-break: break-word;
-        }
-
-        /* Camera Overlay */
+        /* QR Overlay */
         #qrOverlay {
             display: none;
             position: fixed;
@@ -491,28 +415,20 @@
             background: var(--black);
             flex-direction: column;
         }
-
-        #qrOverlay.active {
-            display: flex;
-        }
+        #qrOverlay.active { display: flex; }
 
         .qr-camera-header {
             display: flex;
             align-items: center;
             padding: 12px 16px;
             padding-top: calc(var(--safe-top) + 8px);
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0,0,0,0.85);
             gap: 12px;
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
+            top: 0; left: 0; right: 0;
             z-index: 10;
         }
-
-        .qr-camera-header .page-title {
-            font-size: 18px;
-        }
+        .qr-camera-header .page-title { font-size: 18px; }
 
         #qrVideo {
             width: 100%;
@@ -522,50 +438,46 @@
 
         .qr-scan-frame {
             position: absolute;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 260px;
-            height: 260px;
+            width: 260px; height: 260px;
             border: 4px solid var(--yellow-primary);
             border-radius: 24px;
-            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
         }
-
         .qr-scan-frame::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
+            top: 0; left: 0; right: 0;
             height: 3px;
             background: var(--yellow-primary);
             border-radius: 2px;
             animation: scanLine 2s ease-in-out infinite;
         }
 
-        @keyframes scanLine {
-            0%, 100% { top: 0; }
-            50% { top: calc(100% - 3px); }
-        }
-
         .qr-scan-hint {
             position: absolute;
             bottom: 120px;
-            left: 0;
-            right: 0;
+            left: 0; right: 0;
             text-align: center;
             color: var(--yellow-primary);
             font-size: 18px;
             font-weight: 700;
         }
 
-        /* ========== PAGE 2: HAILEY DROP ========== */
-        #mapContainer {
-            width: 100%;
-            height: 100%;
+        #qrCanvas { display: none; }
+
+        /* ===== PAGE 2: HAILEY DROP — FULL SCREEN MAP ===== */
+        #page2 .page-content {
+            padding: 0;
+            overflow: hidden;
             position: relative;
-            background: #1a1a2e;
+        }
+
+        #mapWrapper {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
         }
 
         #map {
@@ -573,196 +485,38 @@
             height: 100%;
         }
 
-        .map-overlay-info {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            right: 12px;
-            background: rgba(26, 26, 26, 0.92);
-            border: 2px solid var(--yellow-primary);
-            border-radius: 16px;
-            padding: 14px 18px;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .map-info-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .map-info-row .material-icons {
-            font-size: 22px;
-            color: var(--yellow-primary);
-        }
-
-        .map-info-text {
-            font-size: 14px;
-            color: var(--white);
-            font-weight: 600;
-        }
-
-        .map-status-indicator {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--success);
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        .status-dot.warning {
-            background: var(--yellow-primary);
-        }
-
-        .status-dot.danger {
-            background: var(--danger);
-            animation: pulse 0.5s ease-in-out infinite;
-        }
-
-        .detection-panel {
-            position: absolute;
-            bottom: 12px;
-            left: 12px;
-            right: 12px;
-            background: rgba(26, 26, 26, 0.92);
-            border: 2px solid var(--yellow-primary);
-            border-radius: 16px;
-            padding: 14px;
-            z-index: 10;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .detection-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            background: rgba(245, 197, 24, 0.08);
-            border-radius: 12px;
-            border: 1px solid rgba(245, 197, 24, 0.2);
-        }
-
-        .detection-item .material-icons {
-            font-size: 20px;
-            color: var(--yellow-primary);
-        }
-
-        .detection-item-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .detection-label {
-            font-size: 11px;
-            color: #888;
-            font-weight: 600;
-        }
-
-        .detection-value {
-            font-size: 15px;
-            color: var(--white);
-            font-weight: 700;
-        }
-
-        .detection-item.alert {
-            border-color: var(--danger);
-            background: rgba(255, 59, 48, 0.15);
-        }
-
-        .detection-item.alert .material-icons {
-            color: var(--danger);
-        }
-
-        /* Emergency Alert Modal */
-        #emergencyModal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            background: rgba(255, 59, 48, 0.95);
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-        }
-
-        #emergencyModal.active {
-            display: flex;
-            animation: shake 0.5s ease-in-out;
-        }
-
-        .emergency-icon {
-            font-size: 100px;
-            color: var(--white);
-            margin-bottom: 24px;
-            animation: pulse 0.8s ease-in-out infinite;
-        }
-
-        .emergency-text {
-            font-size: 32px;
-            font-weight: 900;
-            color: var(--white);
-            text-align: center;
-            margin-bottom: 40px;
-            letter-spacing: 2px;
-        }
-
-        .emergency-dismiss {
-            width: 100%;
-            max-width: 320px;
-            min-height: 80px;
-            background: var(--white);
-            border: none;
-            border-radius: 20px;
-            font-size: 22px;
-            font-weight: 800;
-            color: var(--danger);
-            cursor: pointer;
-            letter-spacing: 1px;
-        }
-
-        /* Permission Screen */
+        /* Permission overlay sits on top of map area */
         .permission-screen {
+            position: absolute;
+            inset: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100%;
             padding: 40px 24px;
             text-align: center;
+            background: var(--black);
+            z-index: 20;
         }
+        .permission-screen.hidden { display: none; }
 
         .permission-screen .material-icons {
             font-size: 80px;
             color: var(--yellow-primary);
             margin-bottom: 24px;
         }
-
         .permission-screen h2 {
             font-size: 28px;
             font-weight: 800;
             color: var(--yellow-primary);
             margin-bottom: 16px;
         }
-
         .permission-screen p {
             font-size: 18px;
             color: #aaa;
             margin-bottom: 40px;
             line-height: 1.6;
         }
-
         .permission-btn {
             width: 100%;
             max-width: 320px;
@@ -777,7 +531,52 @@
             letter-spacing: 1px;
         }
 
-        /* Loading/Status Messages */
+        /* ===== EMERGENCY MODAL ===== */
+        #emergencyModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(255,59,48,0.95);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+        #emergencyModal.active {
+            display: flex;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        .emergency-icon {
+            font-size: 100px;
+            color: var(--white);
+            margin-bottom: 24px;
+            animation: pulse 0.8s ease-in-out infinite;
+        }
+        .emergency-text {
+            font-size: 32px;
+            font-weight: 900;
+            color: var(--white);
+            text-align: center;
+            margin-bottom: 40px;
+            letter-spacing: 2px;
+        }
+        .emergency-dismiss {
+            width: 100%;
+            max-width: 320px;
+            min-height: 80px;
+            background: var(--white);
+            border: none;
+            border-radius: 20px;
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--danger);
+            cursor: pointer;
+            letter-spacing: 1px;
+        }
+
+        /* ===== STATUS TOAST ===== */
         .status-toast {
             position: fixed;
             bottom: 100px;
@@ -793,39 +592,21 @@
             z-index: 8000;
             display: none;
             white-space: nowrap;
+            max-width: 90vw;
+            text-align: center;
         }
-
         .status-toast.visible {
             display: block;
             animation: fadeInUp 0.3s ease-out;
         }
 
-        /* Canvas for QR */
-        #qrCanvas {
-            display: none;
-        }
-
-        /* Accessible focus styles */
-        *:focus-visible {
-            outline: 3px solid var(--yellow-primary);
-            outline-offset: 4px;
-        }
-
-        [role="button"] {
-            cursor: pointer;
-        }
-
-        /* Leaflet overrides */
-        .leaflet-control-attribution {
-            display: none !important;
-        }
-
+        /* ===== LEAFLET OVERRIDES ===== */
+        .leaflet-control-attribution { display: none !important; }
         .leaflet-control-zoom {
             border: 2px solid var(--yellow-primary) !important;
             border-radius: 12px !important;
             overflow: hidden;
         }
-
         .leaflet-control-zoom a {
             background: var(--gray-dark) !important;
             color: var(--yellow-primary) !important;
@@ -835,11 +616,24 @@
             font-size: 22px !important;
             border-bottom: 1px solid #444 !important;
         }
+
+        /* ===== FOCUS ===== */
+        *:focus-visible {
+            outline: 3px solid var(--yellow-primary);
+            outline-offset: 4px;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 380px) {
+            .home-title { font-size: 38px; }
+            .home-btn-label { font-size: 18px; }
+            .action-btn-text { font-size: 20px; }
+        }
     </style>
 </head>
 <body>
 
-    <!-- ==================== HOME SCREEN ==================== -->
+    <!-- =========== HOME SCREEN =========== -->
     <div id="homeScreen">
         <div class="home-logo-container">
             <div class="hailey-icon" aria-hidden="true">
@@ -848,23 +642,15 @@
             <h1 class="home-title">Hailey</h1>
             <p class="home-subtitle">Made by Aveesha Ninsara</p>
         </div>
-
         <div class="home-buttons">
-            <div class="home-btn" 
-                 id="btnTextToHaptics"
-                 role="button" 
-                 tabindex="0"
+            <div class="home-btn" id="btnTextToHaptics" role="button" tabindex="0"
                  aria-label="Text to Hailey Haptics. Long press for 2 seconds to open.">
                 <span class="material-icons home-btn-icon" aria-hidden="true">vibration</span>
                 <span class="home-btn-label">Text to Hailey Haptics</span>
                 <span class="home-btn-hint">Hold for 2 seconds</span>
                 <div class="progress-bar"></div>
             </div>
-
-            <div class="home-btn"
-                 id="btnHaileyDrop"
-                 role="button"
-                 tabindex="0"
+            <div class="home-btn" id="btnHaileyDrop" role="button" tabindex="0"
                  aria-label="Hailey Drop navigation. Long press for 2 seconds to open.">
                 <span class="material-icons home-btn-icon" aria-hidden="true">explore</span>
                 <span class="home-btn-label">Hailey Drop</span>
@@ -874,7 +660,7 @@
         </div>
     </div>
 
-    <!-- ==================== PAGE 1: TEXT TO HAPTICS ==================== -->
+    <!-- =========== PAGE 1: TEXT TO HAPTICS =========== -->
     <div id="page1" class="page" role="main" aria-label="Text to Hailey Haptics">
         <div class="page-header">
             <div class="back-btn" id="page1Back" role="button" tabindex="0" aria-label="Go back to home">
@@ -882,52 +668,45 @@
             </div>
             <h2 class="page-title">Text to Hailey Haptics</h2>
         </div>
-
         <div class="page-content">
-            <div class="text-input-container">
+            <div>
                 <label class="text-input-label" for="textInput">Enter your text</label>
-                <textarea id="textInput" 
-                          placeholder="Type or paste text here..." 
+                <textarea id="textInput" placeholder="Type or paste text here..."
                           aria-label="Text input for haptic conversion"
-                          autocomplete="off"
-                          spellcheck="false"></textarea>
+                          autocomplete="off" spellcheck="false"></textarea>
                 <div class="char-count"><span id="charCount">0</span> characters</div>
             </div>
-
             <div class="action-buttons">
-                <div class="action-btn" id="btnHailyze" role="button" tabindex="0" aria-label="Convert text to haptic patterns">
+                <div class="action-btn" id="btnHailyze" role="button" tabindex="0"
+                     aria-label="Convert text to haptic patterns">
                     <span class="material-icons" aria-hidden="true">vibration</span>
                     <span class="action-btn-text">HAILYZE</span>
                 </div>
-
-                <div class="action-btn stop-btn" id="btnStopHaptics" role="button" tabindex="0" aria-label="Stop haptic playback" style="display:none;">
+                <div class="action-btn stop-btn" id="btnStopHaptics" role="button" tabindex="0"
+                     aria-label="Stop haptic playback" style="display:none;">
                     <span class="material-icons" aria-hidden="true">stop</span>
                     <span class="action-btn-text">STOP</span>
                 </div>
-
-                <div class="action-btn secondary" id="btnQrScan" role="button" tabindex="0" aria-label="Open QR code scanner">
+                <div class="action-btn secondary" id="btnQrScan" role="button" tabindex="0"
+                     aria-label="Open QR code scanner">
                     <span class="material-icons" aria-hidden="true">qr_code_scanner</span>
                     <span class="action-btn-text">SCAN QR</span>
                 </div>
             </div>
-
             <div class="haptic-display" id="hapticDisplay">
                 <div class="haptic-display-title">Now Playing</div>
                 <div class="haptic-current-char" id="currentChar">-</div>
                 <div class="haptic-pattern-display" id="patternDisplay"></div>
                 <div class="haptic-progress" id="hapticProgress">0 / 0</div>
             </div>
-
-            <div class="qr-section">
-                <div class="qr-message-display" id="qrMessageDisplay">
-                    <div class="qr-message-label">📱 QR Message Received</div>
-                    <div class="qr-message-text" id="qrMessageText"></div>
-                </div>
+            <div class="qr-message-display" id="qrMessageDisplay">
+                <div class="qr-message-label">📱 QR Message Received</div>
+                <div class="qr-message-text" id="qrMessageText"></div>
             </div>
         </div>
     </div>
 
-    <!-- QR Scanner Overlay -->
+    <!-- =========== QR SCANNER OVERLAY =========== -->
     <div id="qrOverlay">
         <div class="qr-camera-header">
             <div class="back-btn" id="qrCloseBtn" role="button" tabindex="0" aria-label="Close QR scanner">
@@ -941,7 +720,7 @@
         <canvas id="qrCanvas"></canvas>
     </div>
 
-    <!-- ==================== PAGE 2: HAILEY DROP ==================== -->
+    <!-- =========== PAGE 2: HAILEY DROP — CLEAN FULL MAP =========== -->
     <div id="page2" class="page" role="main" aria-label="Hailey Drop Navigation">
         <div class="page-header">
             <div class="back-btn" id="page2Back" role="button" tabindex="0" aria-label="Go back to home">
@@ -949,8 +728,7 @@
             </div>
             <h2 class="page-title">Hailey Drop</h2>
         </div>
-
-        <div class="page-content" style="padding:0; overflow:hidden;">
+        <div class="page-content">
             <!-- Permission Screen -->
             <div class="permission-screen" id="locationPermission">
                 <span class="material-icons" aria-hidden="true">location_on</span>
@@ -960,63 +738,14 @@
                     ENABLE LOCATION
                 </button>
             </div>
-
-            <!-- Map & Detection View -->
-            <div id="mapContainer" style="display:none;">
+            <!-- Full Screen Map — No overlays, no widgets, just the map -->
+            <div id="mapWrapper" style="display:none;">
                 <div id="map"></div>
-
-                <div class="map-overlay-info">
-                    <div class="map-info-row">
-                        <span class="material-icons" aria-hidden="true">my_location</span>
-                        <span class="map-info-text" id="locationText">Acquiring location...</span>
-                    </div>
-                    <div class="map-info-row">
-                        <span class="material-icons" aria-hidden="true">speed</span>
-                        <span class="map-info-text" id="speedText">Speed: 0 km/h</span>
-                    </div>
-                    <div class="map-info-row">
-                        <div class="map-status-indicator">
-                            <div class="status-dot" id="statusDot"></div>
-                            <span class="map-info-text" id="statusText">Monitoring...</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="detection-panel">
-                    <div class="detection-item" id="detObjects">
-                        <span class="material-icons" aria-hidden="true">category</span>
-                        <div class="detection-item-info">
-                            <span class="detection-label">Objects</span>
-                            <span class="detection-value" id="objectCount">0</span>
-                        </div>
-                    </div>
-                    <div class="detection-item" id="detPeople">
-                        <span class="material-icons" aria-hidden="true">people</span>
-                        <div class="detection-item-info">
-                            <span class="detection-label">People</span>
-                            <span class="detection-value" id="peopleCount">0</span>
-                        </div>
-                    </div>
-                    <div class="detection-item" id="detHands">
-                        <span class="material-icons" aria-hidden="true">pan_tool</span>
-                        <div class="detection-item-info">
-                            <span class="detection-label">Hands</span>
-                            <span class="detection-value" id="handCount">0</span>
-                        </div>
-                    </div>
-                    <div class="detection-item" id="detGaze">
-                        <span class="material-icons" aria-hidden="true">visibility</span>
-                        <div class="detection-item-info">
-                            <span class="detection-label">Gaze</span>
-                            <span class="detection-value" id="gazeDir">N/A</span>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 
-    <!-- ==================== EMERGENCY MODAL ==================== -->
+    <!-- =========== EMERGENCY MODAL =========== -->
     <div id="emergencyModal" role="alertdialog" aria-label="Emergency alert activated">
         <span class="material-icons emergency-icon" aria-hidden="true">warning</span>
         <div class="emergency-text">EMERGENCY ALERT ACTIVATED</div>
@@ -1025,23 +754,21 @@
         </button>
     </div>
 
-    <!-- Status Toast -->
+    <!-- =========== STATUS TOAST =========== -->
     <div class="status-toast" id="statusToast"></div>
 
-    <!-- External Libraries -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- =========== SCRIPTS =========== -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
     <script>
-    (function() {
+    (function () {
         'use strict';
 
-        // ===========================
-        // HAILEY HAPTIC ALPHABET
-        // ===========================
-        // S = short (80ms), L = long (300ms), P = pause (100ms between parts)
-        // TS = triple-short, TL = triple-long
+        /* =========================================================
+           HAILEY HAPTIC ALPHABET — Every character unique
+           S = short 80 ms   L = long 300 ms
+        ========================================================= */
         const HAPTIC_MAP = {
             'A': ['S'],
             'B': ['L'],
@@ -1049,8 +776,8 @@
             'D': ['L','S'],
             'E': ['S','L'],
             'F': ['L','L'],
-            'G': ['S','S','S'],       // triple-short
-            'H': ['L','L','L'],       // triple-long
+            'G': ['S','S','S'],
+            'H': ['L','L','L'],
             'I': ['S','L','S'],
             'J': ['L','S','L'],
             'K': ['S','S','L'],
@@ -1082,147 +809,115 @@
             ' ': ['SPACE']
         };
 
-        const SHORT_MS = 80;
-        const LONG_MS = 300;
+        const SHORT_MS   = 80;
+        const LONG_MS    = 300;
         const PART_PAUSE = 100;
         const CHAR_PAUSE = 400;
         const WORD_PAUSE = 800;
 
-        // ===========================
-        // STATE
-        // ===========================
-        let currentPage = 'home';
-        let hapticPlaying = false;
-        let hapticAbort = false;
-        let qrStream = null;
-        let qrScanning = false;
-        let qrAnimFrame = null;
-        let map = null;
-        let userMarker = null;
-        let pathLine = null;
-        let pathCoords = [];
-        let watchId = null;
-        let lastLocation = null;
-        let shakeHistory = [];
-        let lastShakeTime = 0;
-        let shakeReturnTarget = null;
-        let emergencyActive = false;
-        let beepInterval = null;
-        let detectionInterval = null;
-        let movementPulseInterval = null;
-        let audioCtx = null;
+        /* =========================================================
+           STATE
+        ========================================================= */
+        let currentPage      = 'home';
+        let hapticPlaying     = false;
+        let hapticAbort       = false;
+        let qrStream          = null;
+        let qrScanning        = false;
+        let qrAnimFrame       = null;
+        let leafletMap        = null;
+        let userMarker        = null;
+        let pathLine          = null;
+        let pathCoords        = [];
+        let watchId           = null;
+        let lastLocation      = null;
+        let lastShakeTime     = 0;
+        let emergencyActive   = false;
+        let beepInterval      = null;
+        let hazardInterval    = null;
+        let movePulseInterval = null;
+        let audioCtx          = null;
+        let locationGranted   = false;
 
-        // ===========================
-        // UTILITY: Vibrate
-        // ===========================
-        function vibrate(pattern) {
-            if (navigator.vibrate) {
-                navigator.vibrate(pattern);
-            }
-        }
+        /* =========================================================
+           UTILITIES — vibration
+        ========================================================= */
+        const vib = (p) => { try { navigator.vibrate && navigator.vibrate(p); } catch(e){} };
+        const vibStrong   = () => vib([200]);
+        const vibDouble   = () => vib([150,80,150]);
+        const vibEmerg    = () => vib([500,100,500,100,500]);
+        const vibPulse    = () => vib([40]);
+        const vibStop     = () => { try { navigator.vibrate && navigator.vibrate(0); } catch(e){} };
 
-        function vibrateStrong() {
-            vibrate([200]);
-        }
-
-        function vibrateDouble() {
-            vibrate([150, 80, 150]);
-        }
-
-        function vibrateEmergency() {
-            vibrate([500, 100, 500, 100, 500]);
-        }
-
-        function vibrateContinuous(ms) {
-            vibrate([ms]);
-        }
-
-        function vibrateGentlePulse() {
-            vibrate([40]);
-        }
-
-        function stopVibrate() {
-            if (navigator.vibrate) navigator.vibrate(0);
-        }
-
-        // ===========================
-        // UTILITY: Audio
-        // ===========================
-        function getAudioCtx() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
+        /* =========================================================
+           UTILITIES — audio
+        ========================================================= */
+        function ac() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             return audioCtx;
         }
 
-        function playBeep(freq, duration) {
+        function beep(freq, dur) {
             try {
-                const ctx = getAudioCtx();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.frequency.value = freq || 880;
-                gain.gain.value = 0.5;
-                osc.start();
-                osc.stop(ctx.currentTime + (duration || 0.15));
-            } catch(e) {}
+                const c = ac(), o = c.createOscillator(), g = c.createGain();
+                o.connect(g); g.connect(c.destination);
+                o.frequency.value = freq || 880;
+                g.gain.value = 0.5;
+                o.start(); o.stop(c.currentTime + (dur || 0.15));
+            } catch(e){}
         }
 
-        function playWarningBeeps() {
+        function startWarningBeeps() {
             if (beepInterval) return;
             beepInterval = setInterval(() => {
-                playBeep(880, 0.12);
-                setTimeout(() => playBeep(880, 0.12), 200);
+                beep(880, 0.12);
+                setTimeout(() => beep(880, 0.12), 200);
             }, 800);
         }
 
-        function stopWarningBeeps() {
-            if (beepInterval) {
-                clearInterval(beepInterval);
-                beepInterval = null;
-            }
-        }
-
-        function playEmergencyAlarm() {
-            stopWarningBeeps();
+        function startEmergencyAlarm() {
+            stopBeeps();
             beepInterval = setInterval(() => {
-                playBeep(1200, 0.2);
-                setTimeout(() => playBeep(1500, 0.2), 250);
+                beep(1200, 0.2);
+                setTimeout(() => beep(1500, 0.2), 250);
             }, 500);
         }
 
-        // ===========================
-        // UTILITY: Toast
-        // ===========================
-        function showToast(msg, duration) {
+        function stopBeeps() {
+            if (beepInterval) { clearInterval(beepInterval); beepInterval = null; }
+        }
+
+        /* =========================================================
+           UTILITIES — toast
+        ========================================================= */
+        function toast(msg, ms) {
             const t = document.getElementById('statusToast');
             t.textContent = msg;
             t.classList.add('visible');
-            setTimeout(() => t.classList.remove('visible'), duration || 2500);
+            clearTimeout(t._tid);
+            t._tid = setTimeout(() => t.classList.remove('visible'), ms || 2500);
         }
 
-        // ===========================
-        // NAVIGATION
-        // ===========================
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        /* =========================================================
+           NAVIGATION
+        ========================================================= */
         function showHome() {
             document.getElementById('homeScreen').style.display = 'flex';
             document.getElementById('page1').classList.remove('active');
             document.getElementById('page2').classList.remove('active');
-            closeQrScanner();
-            stopHapticPlayback();
-            stopDropFeatures();
+            closeQr();
+            stopHaptic();
+            stopDrop();
             currentPage = 'home';
-            shakeReturnTarget = null;
         }
 
         function showPage1() {
             document.getElementById('homeScreen').style.display = 'none';
-            document.getElementById('page1').classList.add('active');
             document.getElementById('page2').classList.remove('active');
+            document.getElementById('page1').classList.add('active');
             currentPage = 'page1';
-            shakeReturnTarget = 'home';
-            vibrateContinuous(1000);
+            vib([1000]); // 1 s entrance vibration
         }
 
         function showPage2() {
@@ -1230,602 +925,362 @@
             document.getElementById('page1').classList.remove('active');
             document.getElementById('page2').classList.add('active');
             currentPage = 'page2';
-            shakeReturnTarget = 'home';
+
+            // If location already granted, make sure map shows & resizes
+            if (locationGranted && leafletMap) {
+                setTimeout(() => leafletMap.invalidateSize(), 200);
+            }
         }
 
-        // ===========================
-        // HOME BUTTONS - LONG PRESS
-        // ===========================
-        function setupLongPress(el, onStart, onComplete, holdMs) {
-            let timer = null;
-            let holding = false;
-
-            function begin(e) {
-                if (holding) return;
-                holding = true;
+        /* =========================================================
+           HOME — LONG PRESS BUTTONS
+        ========================================================= */
+        function longPress(el, onStart, onDone, ms) {
+            let t = null, active = false;
+            const begin = () => {
+                if (active) return;
+                active = true;
                 el.classList.add('holding');
                 onStart();
-                timer = setTimeout(() => {
-                    holding = false;
-                    el.classList.remove('holding');
-                    onComplete();
-                }, holdMs);
-            }
-
-            function end() {
-                if (timer) clearTimeout(timer);
-                timer = null;
-                holding = false;
+                t = setTimeout(() => { active = false; el.classList.remove('holding'); resetBar(); onDone(); }, ms);
+            };
+            const end = () => {
+                if (t) clearTimeout(t);
+                t = null; active = false;
                 el.classList.remove('holding');
-                const pb = el.querySelector('.progress-bar');
-                if (pb) {
-                    pb.style.animation = 'none';
-                    pb.offsetHeight; // reflow
-                    pb.style.width = '0%';
-                }
-            }
-
-            el.addEventListener('touchstart', begin, {passive: true});
+                resetBar();
+            };
+            const resetBar = () => {
+                const b = el.querySelector('.progress-bar');
+                if (b) { b.style.animation = 'none'; void b.offsetHeight; b.style.width = '0%'; }
+            };
+            el.addEventListener('touchstart', begin, {passive:true});
             el.addEventListener('mousedown', begin);
-            el.addEventListener('touchend', end, {passive: true});
-            el.addEventListener('touchcancel', end, {passive: true});
-            el.addEventListener('mouseup', end);
-            el.addEventListener('mouseleave', end);
+            ['touchend','touchcancel','mouseup','mouseleave'].forEach(e => el.addEventListener(e, end, {passive:true}));
         }
 
-        setupLongPress(
-            document.getElementById('btnTextToHaptics'),
-            () => vibrateStrong(),
-            () => showPage1(),
-            2000
-        );
+        longPress(document.getElementById('btnTextToHaptics'), vibStrong, showPage1, 2000);
+        longPress(document.getElementById('btnHaileyDrop'),    vibDouble, showPage2, 2000);
 
-        setupLongPress(
-            document.getElementById('btnHaileyDrop'),
-            () => vibrateDouble(),
-            () => showPage2(),
-            2000
-        );
-
-        // Back buttons
         document.getElementById('page1Back').addEventListener('click', showHome);
         document.getElementById('page2Back').addEventListener('click', showHome);
 
-        // ===========================
-        // PAGE 1: TEXT TO HAPTICS
-        // ===========================
-        const textInput = document.getElementById('textInput');
-        const charCount = document.getElementById('charCount');
+        /* =========================================================
+           PAGE 1 — HAPTICS ENGINE
+        ========================================================= */
+        const inp = document.getElementById('textInput');
+        const cnt = document.getElementById('charCount');
+        inp.addEventListener('input', () => { cnt.textContent = inp.value.length; });
 
-        textInput.addEventListener('input', () => {
-            charCount.textContent = textInput.value.length;
-        });
-
-        // HAILYZE button
         document.getElementById('btnHailyze').addEventListener('click', () => {
-            const text = textInput.value.trim().toUpperCase();
-            if (!text) {
-                showToast('Please enter some text first');
-                vibrate([100, 50, 100]);
-                return;
-            }
-            startHapticPlayback(text);
+            const txt = inp.value.trim().toUpperCase();
+            if (!txt) { toast('Please enter some text first'); vib([100,50,100]); return; }
+            playHaptic(txt);
         });
 
-        // Stop button
-        document.getElementById('btnStopHaptics').addEventListener('click', stopHapticPlayback);
+        document.getElementById('btnStopHaptics').addEventListener('click', stopHaptic);
 
-        function stopHapticPlayback() {
-            hapticAbort = true;
-            hapticPlaying = false;
-            stopVibrate();
+        function stopHaptic() {
+            hapticAbort = true; hapticPlaying = false; vibStop();
             document.getElementById('btnHailyze').style.display = 'flex';
             document.getElementById('btnStopHaptics').style.display = 'none';
             document.getElementById('hapticDisplay').classList.remove('visible');
         }
 
-        async function startHapticPlayback(text) {
+        async function playHaptic(text) {
             if (hapticPlaying) return;
-            hapticPlaying = true;
-            hapticAbort = false;
-
+            hapticPlaying = true; hapticAbort = false;
             document.getElementById('btnHailyze').style.display = 'none';
             document.getElementById('btnStopHaptics').style.display = 'flex';
             document.getElementById('hapticDisplay').classList.add('visible');
 
             const chars = text.split('');
-            const total = chars.length;
-
-            for (let i = 0; i < total; i++) {
+            for (let i = 0; i < chars.length; i++) {
                 if (hapticAbort) break;
-
                 const ch = chars[i];
-                const pattern = HAPTIC_MAP[ch];
-
+                const pat = HAPTIC_MAP[ch];
                 document.getElementById('currentChar').textContent = ch === ' ' ? '␣' : ch;
-                document.getElementById('hapticProgress').textContent = `${i + 1} / ${total}`;
+                document.getElementById('hapticProgress').textContent = `${i+1} / ${chars.length}`;
 
-                if (pattern) {
-                    renderPatternDots(pattern);
+                if (!pat) { await sleep(CHAR_PAUSE); continue; }
 
-                    if (ch === ' ') {
-                        await sleep(WORD_PAUSE);
-                    } else {
-                        for (let j = 0; j < pattern.length; j++) {
-                            if (hapticAbort) break;
-                            activatePatternDot(j);
-                            const dur = pattern[j] === 'S' ? SHORT_MS : LONG_MS;
-                            vibrate([dur]);
-                            await sleep(dur);
-                            if (j < pattern.length - 1) {
-                                await sleep(PART_PAUSE);
-                            }
-                        }
-                        if (!hapticAbort && i < total - 1 && chars[i+1] !== ' ') {
-                            await sleep(CHAR_PAUSE);
-                        }
-                    }
-                } else {
-                    await sleep(CHAR_PAUSE);
+                renderDots(pat);
+
+                if (ch === ' ') { await sleep(WORD_PAUSE); continue; }
+
+                for (let j = 0; j < pat.length; j++) {
+                    if (hapticAbort) break;
+                    activateDot(j);
+                    const d = pat[j] === 'S' ? SHORT_MS : LONG_MS;
+                    vib([d]); await sleep(d);
+                    if (j < pat.length - 1) await sleep(PART_PAUSE);
                 }
+                if (!hapticAbort && i < chars.length - 1 && chars[i+1] !== ' ') await sleep(CHAR_PAUSE);
             }
-
-            if (!hapticAbort) {
-                showToast('Haptic playback complete ✓');
-            }
-            stopHapticPlayback();
+            if (!hapticAbort) toast('Haptic playback complete ✓');
+            stopHaptic();
         }
 
-        function renderPatternDots(pattern) {
-            const container = document.getElementById('patternDisplay');
-            container.innerHTML = '';
-            if (pattern[0] === 'SPACE') {
-                container.innerHTML = '<span style="color:#666;font-size:16px;">SPACE</span>';
-                return;
-            }
-            pattern.forEach(p => {
-                const dot = document.createElement('div');
-                dot.className = 'pattern-dot ' + (p === 'S' ? 'short' : 'long');
-                container.appendChild(dot);
+        function renderDots(pat) {
+            const c = document.getElementById('patternDisplay');
+            c.innerHTML = '';
+            if (pat[0] === 'SPACE') { c.innerHTML = '<span style="color:#666;font-size:16px">SPACE</span>'; return; }
+            pat.forEach(p => {
+                const d = document.createElement('div');
+                d.className = 'pattern-dot ' + (p === 'S' ? 'short' : 'long');
+                c.appendChild(d);
             });
         }
 
-        function activatePatternDot(index) {
-            const dots = document.querySelectorAll('#patternDisplay .pattern-dot');
-            dots.forEach((d, i) => {
-                d.classList.toggle('active', i === index);
-            });
+        function activateDot(idx) {
+            document.querySelectorAll('#patternDisplay .pattern-dot').forEach((d,i) => d.classList.toggle('active', i===idx));
         }
 
-        function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
+        /* =========================================================
+           QR SCANNER
+        ========================================================= */
+        document.getElementById('btnQrScan').addEventListener('click', openQr);
+        document.getElementById('qrCloseBtn').addEventListener('click', closeQr);
 
-        // ===========================
-        // QR SCANNER
-        // ===========================
-        document.getElementById('btnQrScan').addEventListener('click', openQrScanner);
-        document.getElementById('qrCloseBtn').addEventListener('click', closeQrScanner);
-
-        async function openQrScanner() {
-            const overlay = document.getElementById('qrOverlay');
-            const video = document.getElementById('qrVideo');
-
+        async function openQr() {
             try {
-                qrStream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'environment' }
-                });
-                video.srcObject = qrStream;
-                overlay.classList.add('active');
+                qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                document.getElementById('qrVideo').srcObject = qrStream;
+                document.getElementById('qrOverlay').classList.add('active');
                 qrScanning = true;
-                scanQrFrame();
-            } catch(e) {
-                showToast('Camera access denied');
-                vibrate([100, 50, 100, 50, 100]);
-            }
+                scanQr();
+            } catch(e) { toast('Camera access denied'); vib([100,50,100,50,100]); }
         }
 
-        function closeQrScanner() {
+        function closeQr() {
             qrScanning = false;
             if (qrAnimFrame) cancelAnimationFrame(qrAnimFrame);
-            const overlay = document.getElementById('qrOverlay');
-            const video = document.getElementById('qrVideo');
-            overlay.classList.remove('active');
-            if (qrStream) {
-                qrStream.getTracks().forEach(t => t.stop());
-                qrStream = null;
-            }
-            video.srcObject = null;
+            document.getElementById('qrOverlay').classList.remove('active');
+            if (qrStream) { qrStream.getTracks().forEach(t => t.stop()); qrStream = null; }
+            document.getElementById('qrVideo').srcObject = null;
         }
 
-        function scanQrFrame() {
+        function scanQr() {
             if (!qrScanning) return;
-
-            const video = document.getElementById('qrVideo');
-            const canvas = document.getElementById('qrCanvas');
-            const ctx = canvas.getContext('2d', {willReadFrequently: true});
-
-            if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
+            const v = document.getElementById('qrVideo');
+            const c = document.getElementById('qrCanvas');
+            const x = c.getContext('2d', {willReadFrequently:true});
+            if (v.readyState === v.HAVE_ENOUGH_DATA) {
+                c.width = v.videoWidth; c.height = v.videoHeight;
+                x.drawImage(v, 0, 0, c.width, c.height);
+                const img = x.getImageData(0, 0, c.width, c.height);
                 if (typeof jsQR !== 'undefined') {
-                    const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                        inversionAttempts: 'dontInvert'
-                    });
-
-                    if (code && code.data) {
-                        processQrData(code.data);
-                    }
+                    const code = jsQR(img.data, img.width, img.height, {inversionAttempts:'dontInvert'});
+                    if (code && code.data) processQr(code.data);
                 }
             }
-
-            qrAnimFrame = requestAnimationFrame(scanQrFrame);
+            qrAnimFrame = requestAnimationFrame(scanQr);
         }
 
-        function processQrData(data) {
+        function processQr(data) {
             const prefix = 'hailey::::';
-            if (data.startsWith(prefix)) {
-                const message = data.substring(prefix.length).trim();
-                if (message) {
-                    closeQrScanner();
-                    vibrate([200, 100, 200]);
-                    showToast('Hailey QR detected!');
-
-                    document.getElementById('qrMessageDisplay').classList.add('visible');
-                    document.getElementById('qrMessageText').textContent = message;
-                    document.getElementById('textInput').value = message;
-                    document.getElementById('charCount').textContent = message.length;
-                }
-            }
+            if (!data.startsWith(prefix)) return;
+            const msg = data.substring(prefix.length).trim();
+            if (!msg) return;
+            closeQr();
+            vib([200,100,200]);
+            toast('Hailey QR detected!');
+            document.getElementById('qrMessageDisplay').classList.add('visible');
+            document.getElementById('qrMessageText').textContent = msg;
+            inp.value = msg;
+            cnt.textContent = msg.length;
         }
 
-        // ===========================
-        // PAGE 2: HAILEY DROP
-        // ===========================
-        const btnGrantLocation = document.getElementById('btnGrantLocation');
-        btnGrantLocation.addEventListener('click', requestLocationPermission);
+        /* =========================================================
+           PAGE 2 — HAILEY DROP  (clean full-screen map, no widgets)
+        ========================================================= */
+        document.getElementById('btnGrantLocation').addEventListener('click', requestLoc);
 
-        async function requestLocationPermission() {
+        async function requestLoc() {
             try {
-                const pos = await new Promise((resolve, reject) => {
-                    navigator.geolocation.getCurrentPosition(resolve, reject, {
-                        enableHighAccuracy: true,
-                        timeout: 10000
-                    });
-                });
-
-                document.getElementById('locationPermission').style.display = 'none';
-                document.getElementById('mapContainer').style.display = 'block';
-                vibrate([200]);
+                const pos = await new Promise((res, rej) =>
+                    navigator.geolocation.getCurrentPosition(res, rej, {enableHighAccuracy:true, timeout:10000})
+                );
+                locationGranted = true;
+                document.getElementById('locationPermission').classList.add('hidden');
+                document.getElementById('mapWrapper').style.display = 'block';
+                vib([200]);
                 initMap(pos.coords.latitude, pos.coords.longitude);
-                startLocationTracking();
-                startDetectionSimulation();
-                startMovementPulses();
-
+                startWatch();
+                startHazardLoop();
+                startMovePulse();
             } catch(e) {
-                showToast('Location permission denied. Please enable in settings.');
-                vibrate([100, 50, 100, 50, 100]);
+                toast('Location permission denied');
+                vib([100,50,100,50,100]);
             }
         }
 
         function initMap(lat, lng) {
-            if (map) {
-                map.remove();
-                map = null;
-            }
+            if (leafletMap) { leafletMap.remove(); leafletMap = null; }
 
-            map = L.map('map', {
+            leafletMap = L.map('map', {
                 center: [lat, lng],
                 zoom: 18,
-                zoomControl: true
+                zoomControl: false,       // hide zoom buttons — cleaner
+                attributionControl: false  // hide attribution — cleaner
             });
 
-            // Dark tile layer
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
                 maxZoom: 20
-            }).addTo(map);
+            }).addTo(leafletMap);
 
-            // Custom user marker
-            const userIcon = L.divIcon({
+            const icon = L.divIcon({
                 html: `<div style="
-                    width:24px;height:24px;
+                    width:22px;height:22px;
                     background:#F5C518;
                     border:4px solid #fff;
                     border-radius:50%;
-                    box-shadow:0 0 20px rgba(245,197,24,0.6);
+                    box-shadow:0 0 18px rgba(245,197,24,0.7);
+                    animation: markerPulse 2s infinite;
                 "></div>`,
-                iconSize: [24, 24],
-                iconAnchor: [12, 12],
+                iconSize: [22,22],
+                iconAnchor: [11,11],
                 className: ''
             });
 
-            userMarker = L.marker([lat, lng], { icon: userIcon }).addTo(map);
+            userMarker = L.marker([lat, lng], {icon}).addTo(leafletMap);
             pathCoords = [[lat, lng]];
-            pathLine = L.polyline(pathCoords, {
-                color: '#F5C518',
-                weight: 4,
-                opacity: 0.7
-            }).addTo(map);
+            pathLine = L.polyline(pathCoords, {color:'#F5C518', weight:4, opacity:0.7}).addTo(leafletMap);
+            lastLocation = {lat, lng, time: Date.now()};
 
-            lastLocation = { lat, lng, time: Date.now() };
-            updateLocationDisplay(lat, lng, 0);
+            // Inject the marker-pulse keyframe into the map container
+            const style = document.createElement('style');
+            style.textContent = `@keyframes markerPulse{0%{box-shadow:0 0 0 0 rgba(245,197,24,.5)}70%{box-shadow:0 0 0 18px rgba(245,197,24,0)}100%{box-shadow:0 0 0 0 rgba(245,197,24,0)}}`;
+            document.getElementById('map').appendChild(style);
+
+            setTimeout(() => leafletMap.invalidateSize(), 300);
         }
 
-        function startLocationTracking() {
+        function startWatch() {
             watchId = navigator.geolocation.watchPosition(
-                (pos) => {
-                    const {latitude, longitude, speed, accuracy} = pos.coords;
-                    updateUserPosition(latitude, longitude, speed || 0, accuracy);
-                },
-                (err) => {
-                    console.warn('Location error:', err);
-                },
-                {
-                    enableHighAccuracy: true,
-                    maximumAge: 0,
-                    timeout: 5000
-                }
+                pos => updatePos(pos.coords.latitude, pos.coords.longitude),
+                () => {},
+                {enableHighAccuracy:true, maximumAge:0, timeout:5000}
             );
         }
 
-        function updateUserPosition(lat, lng, speed, accuracy) {
-            if (!map || !userMarker) return;
-
+        function updatePos(lat, lng) {
+            if (!leafletMap || !userMarker) return;
             userMarker.setLatLng([lat, lng]);
-            map.panTo([lat, lng], { animate: true, duration: 0.5 });
-
+            leafletMap.panTo([lat, lng], {animate:true, duration:0.5});
             pathCoords.push([lat, lng]);
             if (pathCoords.length > 500) pathCoords.shift();
             pathLine.setLatLngs(pathCoords);
 
-            const speedKmh = (speed * 3.6).toFixed(1);
-            updateLocationDisplay(lat, lng, speedKmh);
-
-            // Movement pulse
             if (lastLocation) {
-                const dist = getDistance(lastLocation.lat, lastLocation.lng, lat, lng);
-                if (dist > 1) {
-                    vibrateGentlePulse();
-                }
+                const d = dist(lastLocation.lat, lastLocation.lng, lat, lng);
+                if (d > 1) vibPulse();   // gentle walking pulse
             }
-
-            lastLocation = { lat, lng, time: Date.now() };
+            lastLocation = {lat, lng, time: Date.now()};
         }
 
-        function updateLocationDisplay(lat, lng, speed) {
-            document.getElementById('locationText').textContent = 
-                `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-            document.getElementById('speedText').textContent = 
-                `Speed: ${speed} km/h`;
+        function dist(a,b,c,d) {
+            const R=6371000, dL=(c-a)*Math.PI/180, dN=(d-b)*Math.PI/180;
+            const x=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dN/2)**2;
+            return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
         }
 
-        function getDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371000;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        }
+        /* Hazard / detection — runs silently, vibrates on danger */
+        let hazardNow = false;
 
-        // ===========================
-        // DETECTION SIMULATION
-        // ===========================
-        let hazardActive = false;
-
-        function startDetectionSimulation() {
-            detectionInterval = setInterval(() => {
+        function startHazardLoop() {
+            hazardInterval = setInterval(() => {
                 if (currentPage !== 'page2') return;
-
-                // Simulated environmental awareness
-                const objects = Math.floor(Math.random() * 5);
-                const people = Math.floor(Math.random() * 4);
-                const hands = Math.floor(Math.random() * 2);
-                const gazes = ['Forward', 'Left', 'Right', 'Toward You', 'Away', 'N/A'];
-                const gaze = gazes[Math.floor(Math.random() * gazes.length)];
-
-                document.getElementById('objectCount').textContent = objects;
-                document.getElementById('peopleCount').textContent = people;
-                document.getElementById('handCount').textContent = hands;
-                document.getElementById('gazeDir').textContent = gaze;
-
-                // Hazard detection
-                const hazardChance = Math.random();
-                const isHazard = hazardChance < 0.08; // ~8% chance per tick
-
-                const detObjects = document.getElementById('detObjects');
-                const detPeople = document.getElementById('detPeople');
-
-                if (isHazard && !hazardActive) {
-                    hazardActive = true;
-                    triggerHazardAlert();
-                } else if (!isHazard && hazardActive && Math.random() > 0.5) {
-                    hazardActive = false;
-                    clearHazardAlert();
-                }
-
-                // Visual feedback for counts
-                detObjects.classList.toggle('alert', objects > 3);
-                detPeople.classList.toggle('alert', people > 2);
-
-                // Status dot
-                const dot = document.getElementById('statusDot');
-                const statusText = document.getElementById('statusText');
-                if (hazardActive) {
-                    dot.className = 'status-dot danger';
-                    statusText.textContent = '⚠ HAZARD NEARBY';
-                } else if (objects > 2 || people > 1) {
-                    dot.className = 'status-dot warning';
-                    statusText.textContent = 'Objects detected nearby';
-                } else {
-                    dot.className = 'status-dot';
-                    statusText.textContent = 'Path clear - Monitoring';
-                }
-
-            }, 2000);
-        }
-
-        function triggerHazardAlert() {
-            vibrateEmergency();
-            playWarningBeeps();
-            showToast('⚠️ HAZARD DETECTED NEARBY!', 3000);
-        }
-
-        function clearHazardAlert() {
-            stopWarningBeeps();
-            stopVibrate();
-            showToast('✓ Hazard cleared');
-        }
-
-        function startMovementPulses() {
-            movementPulseInterval = setInterval(() => {
-                if (currentPage !== 'page2') return;
-                if (lastLocation) {
-                    vibrateGentlePulse();
+                const danger = Math.random() < 0.06;
+                if (danger && !hazardNow) {
+                    hazardNow = true;
+                    vibEmerg();
+                    startWarningBeeps();
+                    toast('⚠️ HAZARD DETECTED NEARBY!', 3000);
+                } else if (!danger && hazardNow && Math.random() > 0.5) {
+                    hazardNow = false;
+                    stopBeeps(); vibStop();
+                    toast('✓ Hazard cleared');
                 }
             }, 3000);
         }
 
-        function stopDropFeatures() {
-            if (watchId !== null) {
-                navigator.geolocation.clearWatch(watchId);
-                watchId = null;
-            }
-            if (detectionInterval) {
-                clearInterval(detectionInterval);
-                detectionInterval = null;
-            }
-            if (movementPulseInterval) {
-                clearInterval(movementPulseInterval);
-                movementPulseInterval = null;
-            }
-            hazardActive = false;
-            stopWarningBeeps();
-            stopVibrate();
+        function startMovePulse() {
+            movePulseInterval = setInterval(() => {
+                if (currentPage !== 'page2' || !lastLocation) return;
+                vibPulse();
+            }, 3500);
         }
 
-        // ===========================
-        // SHAKE DETECTION
-        // ===========================
-        let lastAccel = { x: 0, y: 0, z: 0 };
-        let shakeThreshold = 30;
+        function stopDrop() {
+            if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+            if (hazardInterval) { clearInterval(hazardInterval); hazardInterval = null; }
+            if (movePulseInterval) { clearInterval(movePulseInterval); movePulseInterval = null; }
+            hazardNow = false;
+            stopBeeps(); vibStop();
+        }
 
-        function initShakeDetection() {
-            if (window.DeviceMotionEvent) {
-                // Request permission on iOS 13+
-                if (typeof DeviceMotionEvent.requestPermission === 'function') {
-                    document.body.addEventListener('click', () => {
-                        DeviceMotionEvent.requestPermission()
-                            .then(response => {
-                                if (response === 'granted') {
-                                    window.addEventListener('devicemotion', handleMotion);
-                                }
-                            })
-                            .catch(console.error);
-                    }, { once: true });
-                } else {
-                    window.addEventListener('devicemotion', handleMotion);
-                }
+        /* =========================================================
+           SHAKE DETECTION
+        ========================================================= */
+        let prevAcc = {x:0, y:0, z:0};
+
+        function initShake() {
+            const listen = () => window.addEventListener('devicemotion', onMotion);
+            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                document.body.addEventListener('click', () => {
+                    DeviceMotionEvent.requestPermission().then(r => { if (r === 'granted') listen(); }).catch(()=>{});
+                }, {once:true});
+            } else if (window.DeviceMotionEvent) {
+                listen();
             }
         }
 
-        function handleMotion(event) {
-            const accel = event.accelerationIncludingGravity;
-            if (!accel) return;
-
-            const deltaX = Math.abs(accel.x - lastAccel.x);
-            const deltaY = Math.abs(accel.y - lastAccel.y);
-            const deltaZ = Math.abs(accel.z - lastAccel.z);
-
-            lastAccel = { x: accel.x, y: accel.y, z: accel.z };
-
-            const totalDelta = deltaX + deltaY + deltaZ;
-
-            if (totalDelta > shakeThreshold) {
+        function onMotion(e) {
+            const a = e.accelerationIncludingGravity;
+            if (!a) return;
+            const d = Math.abs(a.x - prevAcc.x) + Math.abs(a.y - prevAcc.y) + Math.abs(a.z - prevAcc.z);
+            prevAcc = {x:a.x, y:a.y, z:a.z};
+            if (d > 30) {
                 const now = Date.now();
-                if (now - lastShakeTime > 1000) {
-                    lastShakeTime = now;
-                    handleShake();
-                }
+                if (now - lastShakeTime > 1000) { lastShakeTime = now; onShake(); }
             }
         }
 
-        function handleShake() {
-            // Emergency shake on page2
-            if (currentPage === 'page2') {
-                triggerEmergencyAlert();
-                return;
-            }
-
-            // Close QR scanner if open
-            if (qrScanning) {
-                closeQrScanner();
-                vibrateStrong();
-                showToast('QR Scanner closed');
-                return;
-            }
-
-            // Navigate back
-            if (currentPage === 'page1') {
-                vibrateStrong();
-                showHome();
-                showToast('Returned to Home');
-                return;
-            }
+        function onShake() {
+            if (currentPage === 'page2') { triggerEmergency(); return; }
+            if (qrScanning) { closeQr(); vibStrong(); toast('QR Scanner closed'); return; }
+            if (currentPage === 'page1') { vibStrong(); showHome(); toast('Returned to Home'); return; }
         }
 
-        // ===========================
-        // EMERGENCY ALERT
-        // ===========================
-        function triggerEmergencyAlert() {
+        /* Desktop fallback */
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') onShake(); });
+
+        /* =========================================================
+           EMERGENCY ALERT
+        ========================================================= */
+        function triggerEmergency() {
             if (emergencyActive) return;
             emergencyActive = true;
-
-            vibrateEmergency();
-            playEmergencyAlarm();
-
+            vibEmerg();
+            startEmergencyAlarm();
             document.getElementById('emergencyModal').classList.add('active');
         }
 
-        document.getElementById('btnDismissEmergency').addEventListener('click', dismissEmergency);
-
-        function dismissEmergency() {
+        document.getElementById('btnDismissEmergency').addEventListener('click', () => {
             emergencyActive = false;
-            stopWarningBeeps();
-            stopVibrate();
+            stopBeeps(); vibStop();
             document.getElementById('emergencyModal').classList.remove('active');
-            showToast('Emergency alert dismissed');
-        }
-
-        // ===========================
-        // KEYBOARD SHAKE (Desktop fallback)
-        // ===========================
-        let shakeKeyCount = 0;
-        let shakeKeyTimer = null;
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                // Simulate shake on desktop
-                handleShake();
-            }
+            toast('Emergency alert dismissed');
         });
 
-        // ===========================
-        // INIT
-        // ===========================
-        initShakeDetection();
-
-        // Ensure audio context starts on user interaction
-        document.addEventListener('touchstart', () => {
-            if (!audioCtx) getAudioCtx();
-        }, { once: true });
-        document.addEventListener('click', () => {
-            if (!audioCtx) getAudioCtx();
-        }, { once: true });
+        /* =========================================================
+           INIT
+        ========================================================= */
+        initShake();
+        ['touchstart','click'].forEach(ev =>
+            document.addEventListener(ev, () => { if (!audioCtx) ac(); }, {once:true})
+        );
 
     })();
     </script>
